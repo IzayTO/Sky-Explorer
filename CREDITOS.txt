@@ -1,4 +1,4 @@
-A cielo abierto — Tierra 1.1
+A cielo abierto — Tierra y Luna 2.0
 
 Base de referencia facilitada por Isai:
 https://github.com/IzayTO/Playa-Paraiso-Inmersive-3D-experience-
@@ -39,3 +39,32 @@ Los 137 411 puntos posibles no se muestran simultáneamente a simple vista.
 El resto del entorno gráfico, la interfaz y los sonidos se generan mediante
 código local de esta experiencia. No se descargan sonidos, fuentes,
 texturas ni dependencias externas durante la exploración.
+
+
+DESTINO LUNA — 2.0
+
+El relieve de lunar-height.png, el grano de regolith.jpg y el atlas earth.jpg
+se generaron localmente para esta experiencia. El atlas de Tierra es una
+ilustración de 4096 × 2048: costas aproximadas trazadas en longitud/latitud,
+color de superficie, casquetes y nubes procedurales. No procede de NASA
+ni se presenta como imagen satelital. El terreno lunar también es procedural;
+no se presenta como modelo de elevación medido por LRO.
+
+Bases físicas de referencia consultadas durante la preparación:
+NASA Science — Moon Facts / Tidal Locking / Top Moon Questions.
+https://science.nasa.gov/moon/facts/
+https://science.nasa.gov/moon/tidal-locking/
+https://science.nasa.gov/moon/top-moon-questions/
+NASA Glenn Research Center — Moon (gravedad superficial 1,62 m/s²).
+https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/moon/
+NASA Ames — The Dark Side of the Crater: How Light Looks Different on the Moon.
+NASA/GSFC Cosmicopia — visibilidad de estrellas desde la Luna.
+https://cosmicopia.gsfc.nasa.gov/qa_star.html
+
+No se atribuyen a NASA la interpretación visual, los sonidos o los ajustes
+artísticos de tamaño y adaptación. La referencia fotográfica auténtica de
+NASA que ya contenía Tierra (moon.jpg, LROC) se conserva sin cambios.
+
+La cámara, física, linterna y shaders lunares son código local. Las imágenes
+VRChat del usuario se usaron como referencia visual; no se copiaron modelos,
+banderas, naves, texturas ni otros recursos de esos mundos.

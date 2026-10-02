@@ -55,6 +55,13 @@ export class Ambience{
     src.connect(filter);filter.connect(gain);gain.connect(pan);pan.connect(this.master);src.start(t,Math.random()*.2);src.stop(t+duration+.02);
     src.onended=()=>{src.disconnect();filter.disconnect();gain.disconnect();pan.disconnect();};
   }
+  jump(){this.contact(.085,.16,140);}
+  land(impact=3){const strength=Math.min(.2,.065+impact*.018);this.contact(strength,.19,190);this.contact(strength*.65,.14,240,.08);}
+  contact(strength,duration,frequency,delay=0){
+    if(!this.ctx||!this.active||this.muted||this.ctx.state!=='running')return;
+    const c=this.ctx,t=c.currentTime+delay,src=c.createBufferSource(),filter=c.createBiquadFilter(),gain=c.createGain();src.buffer=this.stepBuffer;src.playbackRate.value=.65+Math.random()*.3;filter.type='lowpass';filter.frequency.value=frequency+Math.random()*60;filter.Q.value=.4;
+    gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(strength,t+.02);gain.gain.exponentialRampToValueAtTime(.0001,t+duration);src.connect(filter);filter.connect(gain);gain.connect(this.master);src.start(t,Math.random()*.14);src.stop(t+duration+.02);src.onended=()=>{src.disconnect();filter.disconnect();gain.disconnect();};
+  }
   step(speed=1){
     if(!this.ctx||!this.active||this.muted||this.ctx.state!=='running')return;const c=this.ctx,t=c.currentTime;
     const source=c.createBufferSource();source.buffer=this.stepBuffer;source.playbackRate.value=.78+Math.random()*.36;
