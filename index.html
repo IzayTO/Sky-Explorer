@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#10191c">
+  <meta name="description" content="Una pradera, el paso de la luz y todo un cielo por descubrir. Una experiencia personal de exploración.">
+  <title>A cielo abierto</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23111f25'/%3E%3Cpath d='M12 43h40M18 35a14 14 0 0128 0' fill='none' stroke='%23dec8a2' stroke-width='3'/%3E%3Ccircle cx='43' cy='17' r='2' fill='%23fff3dc'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main id="world" tabindex="-1" aria-label="Paisaje interactivo en primera persona"></main>
+  <div id="lens" aria-hidden="true"><div class="lens-rim"></div></div>
+  <div id="fade" aria-hidden="true"></div>
+
+  <section id="welcome" aria-labelledby="welcome-title">
+    <div class="welcome-shade"></div>
+    <div class="welcome-content">
+      <div class="wordmark"><span class="mark" aria-hidden="true">◒</span> A CIELO ABIERTO</div>
+      <p class="eyebrow">UN MOMENTO PARA MIRAR</p>
+      <h1 id="welcome-title">Elige dónde<br>quieres estar.</h1>
+      <p class="welcome-copy">Camina sin prisa. El cielo hace el resto.</p>
+      <div class="destinations">
+        <button id="enter" class="destination earth" disabled><span class="destination-number">01</span><span class="destination-main"><strong>Tierra</strong><span>Una pradera bajo las estrellas</span></span><span class="destination-action" id="enter-label">Preparando…</span></button>
+        <button id="moon-destination" class="destination moon" aria-label="Luna, no disponible aún"><span class="destination-number">02</span><span class="destination-main"><strong>Luna</strong><span>Otro horizonte por descubrir</span></span><span class="soon">Próximamente</span></button>
+      </div>
+      <p class="welcome-footer"><span id="device-hint">WASD para caminar · Arrastra para mirar</span><span>Hecho para perder la noción del tiempo.</span></p>
+    </div>
+    <p id="loading-error" role="alert" hidden></p>
+  </section>
+
+  <div id="hud" hidden>
+    <header class="topbar">
+      <button id="home" class="brand-button" aria-label="Volver a elegir destino"><span class="mark">◒</span><span>A cielo abierto<small>TIERRA</small></span></button>
+      <div class="top-actions">
+        <button id="sound-button" class="icon-button glass" aria-label="Silenciar ambiente" aria-pressed="true" data-icon="volume"></button>
+        <button id="hide-ui" class="icon-button glass" aria-label="Ocultar controles" data-icon="eye"></button>
+        <button id="settings-button" class="icon-button glass" aria-label="Abrir ajustes" aria-expanded="false" aria-controls="settings" data-icon="sliders"></button>
+      </div>
+    </header>
+    <div class="compass" aria-label="Orientación"><span id="bearing">O</span><span class="compass-tick"></span><span id="degrees">270°</span></div>
+    <div class="moment"><span id="moment-name">Luz de la tarde</span><span class="moment-line"></span><time id="clock">17:48</time></div>
+
+    <aside id="settings" class="panel glass" aria-labelledby="settings-title" hidden>
+      <div class="panel-heading"><div><p class="eyebrow">A TU RITMO</p><h2 id="settings-title">Tu experiencia</h2></div><button id="close-settings" class="icon-button" aria-label="Cerrar ajustes" data-icon="close"></button></div>
+      <div class="tabs" role="tablist" aria-label="Ajustes"><button id="sky-tab" role="tab" aria-selected="true" aria-controls="sky-settings">Cielo</button><button id="walk-tab" role="tab" aria-selected="false" aria-controls="walk-settings" tabindex="-1">Exploración</button></div>
+      <div id="sky-settings" role="tabpanel" aria-labelledby="sky-tab">
+        <div class="field"><div class="field-label"><label for="phase">Fase lunar</label><output id="phase-value">Creciente · 26 %</output></div><div class="phase-preview"><canvas id="phase-preview" width="104" height="104" aria-hidden="true"></canvas><span id="phase-name">Luna creciente<small>La luz recorre su superficie.</small></span></div><input id="phase" type="range" min="0" max="1000" step="1" value="170"><div class="range-labels"><span>Nueva</span><span>Llena</span><span>Nueva</span></div></div>
+        <div class="phase-presets" aria-label="Elegir fase"><button data-phase="0">Nueva</button><button data-phase="0.25">Cuarto</button><button data-phase="0.5">Llena</button><button data-phase="0.75">Menguante</button></div>
+        <div class="field"><div class="field-label"><label for="duration">Duración del ciclo</label><output id="duration-value">12 min</output></div><input id="duration" type="range" min="2" max="60" value="12" step="1"></div>
+        <div class="field compact"><span class="field-label">Recorrido del Sol</span><div class="segmented" id="sun-path"><button data-path="0" aria-pressed="true">Este · Oeste</button><button data-path="1" aria-pressed="false">Norte · Sur</button></div></div>
+        <div class="toggle-row"><label for="milky">Vía Láctea</label><input id="milky" class="switch" type="checkbox" checked></div>
+        <p class="panel-note">Su brillo aparece al caer la noche y se atenúa con la luz de la Luna.</p>
+      </div>
+      <div id="walk-settings" role="tabpanel" aria-labelledby="walk-tab" hidden>
+        <div class="field"><div class="field-label"><label for="fov">Campo de visión</label><output id="fov-value">100°</output></div><input id="fov" type="range" min="55" max="120" value="100" step="1"><p id="fov-note" class="panel-note">Se ajusta con el telescopio guardado.</p></div>
+        <div class="field"><div class="field-label"><label for="speed">Velocidad al caminar</label><output id="speed-value">1.0×</output></div><input id="speed" type="range" min="0.4" max="4" value="1" step="0.1"></div>
+        <div class="field"><div class="field-label"><label for="volume">Sonido del entorno</label><output id="volume-value">35 %</output></div><input id="volume" type="range" min="0" max="100" value="35" step="1"></div>
+        <div class="toggle-row"><label for="sway">Balanceo suave al caminar</label><input id="sway" class="switch" type="checkbox" checked></div>
+        <div class="field compact"><label class="field-label" for="quality">Detalle visual</label><select id="quality"><option value="auto">Automático</option><option value="high">Alto</option><option value="balanced">Equilibrado</option></select></div>
+        <button id="reset-position" class="text-button">Volver al punto de inicio</button>
+        <div class="controls-help" id="controls-help"><p><kbd>W A S D</kbd> Caminar · <kbd>Q E</kbd> Girar</p><p>Arrastrar: mirar · <kbd>T</kbd> Telescopio · <kbd>H</kbd> Ocultar</p><p><kbd>Esc</kbd> Cerrar · Doble clic: mirada con ratón · Esc: liberar</p></div>
+      </div>
+    </aside>
+
+    <div id="joystick" role="group" aria-label="Joystick: desliza para caminar"><span class="joy-north" aria-hidden="true"></span><span class="joy-south" aria-hidden="true"></span><div id="joy-thumb"></div></div>
+    <div id="look-hint">Arrastra para mirar</div>
+    <div class="scope-actions">
+      <div id="scope-controls" class="glass" hidden><button id="aim-moon" aria-label="Centrar la Luna" title="Centrar la Luna" data-icon="moon"></button><span class="scope-divider"></span><div id="zoom-levels" aria-label="Aumento del telescopio"><button data-zoom="0" aria-pressed="true">0×</button><button data-zoom="1" aria-pressed="false">1×</button><button data-zoom="2" aria-pressed="false">2×</button><button data-zoom="3" aria-pressed="false">3×</button></div></div>
+      <button id="scope-button" class="scope-button glass" aria-label="Usar telescopio" aria-pressed="false"><span data-icon="scope"></span><span id="scope-label">Telescopio</span></button>
+    </div>
+    <footer id="timeline" class="timeline glass">
+      <div class="timeline-top"><button id="play" class="play-button" aria-label="Reproducir ciclo" aria-pressed="false" data-icon="play"></button><div><span class="timeline-title">El paso de la luz</span><span id="timeline-status">El tiempo está en tus manos</span></div><button id="cycle-direction" class="icon-button" aria-label="Invertir dirección del tiempo" title="Invertir dirección del tiempo" data-icon="forward"></button><button id="timeline-toggle" class="icon-button" aria-label="Plegar ciclo" aria-expanded="true" data-icon="chevron"></button></div>
+      <div class="timeline-body"><div class="timeline-presets"><button data-hour="0">Noche</button><button data-hour="6">Amanecer</button><button data-hour="12">Día</button><button data-hour="18">Atardecer</button><button data-hour="23.99" aria-label="Noche al final del ciclo">Noche</button></div><input id="time" class="time-range" aria-label="Ciclo completo de día y noche" type="range" min="0" max="24" step="0.005" value="17.8"><div class="time-marks" aria-hidden="true"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div></div>
+    </footer>
+  </div>
+  <button id="show-ui" class="icon-button glass" aria-label="Mostrar controles" hidden data-icon="eye"></button>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <noscript>Activa JavaScript en tu navegador para explorar el paisaje.</noscript>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

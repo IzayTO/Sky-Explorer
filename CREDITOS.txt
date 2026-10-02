@@ -1,0 +1,37 @@
+A cielo abierto — Tierra 1.0
+
+Base de referencia facilitada por Isai:
+https://github.com/IzayTO/Playa-Paraiso-Inmersive-3D-experience-
+
+Se revisaron y adaptaron las técnicas de atmosphere.js, stars.js y walk.js:
+fondo mediante proyección inversa de cámara, color direccional del cielo,
+campo estelar dibujado de una vez, captura de punteros, control táctil y
+recuperación de teclado después de usar deslizadores.
+Esta experiencia elimina la dependencia de maquetas, rutas y elementos
+hoteleros y desarrolla un ciclo completo, Luna, telescopio, suelo y audio.
+
+Three.js
+Motor local procedente del repositorio de referencia.
+https://threejs.org/
+Licencia MIT: THREE-LICENSE.txt.
+
+Textura de la Luna
+NASA's Scientific Visualization Studio — CGI Moon Kit.
+Mapa LROC de albedo/color de 2048 × 1024 píxeles.
+https://svs.gsfc.nasa.gov/4720/
+https://svs.gsfc.nasa.gov/vis/a000000/a004700/a004720/lroc_color_2k.jpg
+Crédito: NASA's Scientific Visualization Studio; datos de LROC.
+Su inclusión no implica patrocinio ni aprobación de NASA.
+
+Catálogo de estrellas
+41 411 registros hasta magnitud 8, a partir de stars.8.json de d3-celestial.
+Datos derivados de XHIP, Anderson & Francis (2012), distribuidos por Olaf Frohn.
+https://github.com/ofrohn/d3-celestial
+https://raw.githubusercontent.com/ofrohn/d3-celestial/master/data/stars.8.json
+Licencia BSD de 3 cláusulas: STARS-LICENSE.txt.
+Se compactaron ascensión recta, declinación, magnitud y color B-V en
+star-catalog.js; se mantienen posiciones y magnitudes, redondeadas.
+
+El resto del entorno gráfico, la interfaz y los sonidos se generan mediante
+código local de esta experiencia. No se descargan sonidos, fuentes,
+texturas ni dependencias externas durante la exploración.

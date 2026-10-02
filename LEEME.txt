@@ -1,0 +1,101 @@
+A CIELO ABIERTO — TIERRA 1.0
+
+PARA SUBIRLO A GITHUB PAGES
+
+1. Descomprime el ZIP.
+2. En tu repositorio nuevo, sube TODOS los archivos extraídos juntos,
+   directamente en la raíz. index.html debe verse al abrir el repositorio.
+   No subas el ZIP como si fuera la página. No cambies los nombres.
+3. Ve a Settings > Pages.
+4. En Source, elige Deploy from a branch.
+5. Elige main y / (root), y pulsa Save.
+6. Espera a que GitHub termine y abre la dirección que aparece en Pages.
+
+No necesitas instalar nada, compilar, configurar claves ni crear carpetas.
+El motor 3D, el catálogo y la textura de la Luna están incluidos.
+Abre el enlace de Pages en Safari o Chrome; la vista previa de Archivos de
+iPhone no ejecuta una página 3D con módulos JavaScript.
+
+CÓMO EXPLORAR
+
+Entra en Tierra. La opción Luna muestra «no disponible aún».
+
+Teléfono:
+- Joystick izquierdo: avanzar, retroceder o desplazarte a los lados.
+- Arrastra el paisaje con otro dedo para mirar, incluso mientras caminas.
+- Ajustes, arriba a la derecha: cielo y exploración.
+- El ojo oculta la interfaz; vuelve a pulsarlo para recuperarla.
+
+Computadora:
+- W/A/S/D: caminar libremente.
+- Q/E o flechas izquierda/derecha: girar.
+- Flechas arriba/abajo: avanzar o retroceder.
+- Arrastrar con el ratón: mirar.
+- Doble clic en el paisaje: capturar/liberar el ratón, si el navegador
+  lo permite. Esc también lo libera.
+- T: sacar/guardar el telescopio. 0/1/2/3: elegir aumento con él abierto.
+- H: ocultar/mostrar controles. M: silenciar/activar ambiente.
+
+EL CIELO
+
+La barra inferior recorre las 24 horas. Puedes detenerte donde quieras,
+usar los accesos Noche/Amanecer/Día/Atardecer o reproducir el ciclo.
+La flecha invierte el sentido del tiempo. El ciclo empieza en pausa.
+En Ajustes puedes cambiar su duración y el eje del recorrido solar.
+
+La fase inicial de la Luna es creciente, con aproximadamente 26 % iluminado,
+entre creciente fina y cuarto creciente. El control de fase recorre nueva,
+creciente, llena, menguante y nueva, con un terminador continuo.
+La luz de la Luna modifica el suelo y la visibilidad de la Vía Láctea.
+La Vía Láctea es una capa difusa independiente de las estrellas.
+
+TELESCOPIO
+
+0× mantiene la visión normal dentro de la lente. 1×, 2× y 3× son niveles
+de acercamiento, no medidas literales de magnificación óptica.
+El último nivel permite ver la Luna grande y su textura auténtica.
+El botón con una luna centra suavemente la mirada en ella cuando está
+sobre el horizonte. Si no está, mueve el ciclo hacia la noche.
+Guarda el telescopio para ajustar el campo de visión normal.
+Puedes seguir caminando con él, y la sensibilidad de mirada se reduce
+con el aumento para ayudarte a observar detalles.
+
+ESPACIO Y SONIDO
+
+Pradera plana de 600 metros de radio transitable. El límite invisible está
+muy lejos del borde del suelo, que continúa hasta el horizonte.
+Viento estéreo discreto y pisadas sintetizadas con variaciones. No hay música.
+El audio comienza al entrar; puedes regularlo o silenciarlo.
+Las preferencias de exploración se guardan solo en tu navegador.
+La sesión se pausa al dejar la pestaña en segundo plano.
+
+RENDIMIENTO
+
+Pasto instanciado, catálogo estelar en una sola llamada de dibujo y
+textura lunar local de 2048 × 1024. No se usan efectos pesados de bloom.
+El modo Automático ajusta únicamente la resolución de dibujo si detecta
+lentitud sostenida: conserva las capas, la textura y el catálogo.
+También puedes elegir Alto o Equilibrado.
+
+ALCANCE
+
+Esta entrega contiene la experiencia de Tierra. Visitar la Luna y el modo
+inmersivo de Meta Quest quedan para una etapa posterior, como acordamos.
+El ciclo es ilustrativo: la Luna se mantiene opuesta al Sol, mientras su
+fase se controla por separado. No calcula efemérides, estación, fecha o
+posición geográfica reales. Las posiciones relativas de las estrellas
+proceden de un catálogo; la orientación del cielo está elegida para la
+experiencia. La Vía Láctea es una representación procedural tenue.
+
+VERIFICACIÓN
+
+Revisados: sintaxis y referencias locales; controles y límites con eventos
+simulados; interfaz de escritorio y de 390 × 844; bloqueo del FOV; y
+compilación/renderizado de los seis shaders mediante OpenGL por software,
+incluyendo día, atardecer, noche, Luna nueva, creciente y llena.
+El navegador de revisión tenía WebGL deshabilitado: la interfaz se comprobó
+por separado del motor 3D. No se ha probado directamente en un iPhone físico
+ni se ha medido el rendimiento real de Safari en ese dispositivo.
+La entrega usa el motor WebGL real; no contiene el adaptador de revisión.
+
+Los créditos y licencias están en CREDITOS.txt y los dos archivos LICENSE.
