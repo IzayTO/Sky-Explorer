@@ -1,4 +1,4 @@
-A cielo abierto — Tierra 1.0
+A cielo abierto — Tierra 1.1
 
 Base de referencia facilitada por Isai:
 https://github.com/IzayTO/Playa-Paraiso-Inmersive-3D-experience-
@@ -31,6 +31,10 @@ https://raw.githubusercontent.com/ofrohn/d3-celestial/master/data/stars.8.json
 Licencia BSD de 3 cláusulas: STARS-LICENSE.txt.
 Se compactaron ascensión recta, declinación, magnitud y color B-V en
 star-catalog.js; se mantienen posiciones y magnitudes, redondeadas.
+La versión 1.1 añade 96 000 puntos débiles decorativos generados con una
+semilla fija, exclusivamente para los aumentos del telescopio. Esos puntos
+no pertenecen a XHIP ni representan objetos astronómicos identificados.
+Los 137 411 puntos posibles no se muestran simultáneamente a simple vista.
 
 El resto del entorno gráfico, la interfaz y los sonidos se generan mediante
 código local de esta experiencia. No se descargan sonidos, fuentes,

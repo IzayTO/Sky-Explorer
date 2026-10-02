@@ -1,11 +1,27 @@
 import * as THREE from './three.module.js';
 import {clamp} from './sky.js';
+
+export const cycleHour=value=>((Number(value)%24)+24)%24;
+// A native, keyboard-accessible range, with an immediate midnight wrap. While a
+// finger is still held at the right edge, ignore native repeat input at that edge.
+export function bindTimeLoop(input,onChange){
+  let pointer=null,wrapped=false;
+  input.addEventListener('pointerdown',e=>{pointer=e.pointerId;wrapped=false;});
+  const release=e=>{if(e.pointerId===pointer){pointer=null;wrapped=false;}};
+  ['pointerup','pointercancel','lostpointercapture'].forEach(type=>input.addEventListener(type,release));
+  input.addEventListener('input',()=>{
+    let raw=Number(input.value);
+    if(wrapped&&pointer!==null){if(raw>.5){input.value=0;return;}wrapped=false;}
+    if(raw>=24&&pointer!==null)wrapped=true;
+    const hour=cycleHour(raw);input.value=hour;onChange(hour);
+  });
+}
 // Pointer capture, Safari gesture handling, keyboard focus recovery and input
 // cancellation follow walk.js in the reference. Movement is now unconstrained
 // on a plane, with a 600 m circular safety limit inside an 8 km ground radius.
 export class Walker{
   constructor(camera,canvas,onStep,onBoundary){
-    this.camera=camera;this.canvas=canvas;this.onStep=onStep;this.onBoundary=onBoundary;this.enabled=false;this.keys=new Set();this.joy={x:0,y:0};this.pos=new THREE.Vector3(0,1.68,0);this.yaw=-Math.PI/2+.06;this.pitch=.085;this.speed=1;this.drag=null;this.joyId=null;this.velocity=new THREE.Vector2();this.distance=0;this.stepAt=0;this.sway=true;this.sensitivity=1;this.boundaryAt=0;this.lookTween=null;
+    this.camera=camera;this.canvas=canvas;this.onStep=onStep;this.onBoundary=onBoundary;this.enabled=false;this.keys=new Set();this.joy={x:0,y:0};this.pos=new THREE.Vector3(0,1.68,0);this.yaw=-Math.PI/2+.06;this.pitch=.085;this.speed=1;this.drag=null;this.joyId=null;this.velocity=new THREE.Vector2();this.distance=0;this.stepAt=0;this.sway=true;this.sensitivity=1;this.boundaryAt=0;this.lookTween=null;this.roll=0;this.bob=0;
     const focus=()=>document.getElementById('world').focus({preventScroll:true});
     canvas.addEventListener('pointerdown',e=>{if(!this.enabled||this.drag||e.button!==0)return;focus();this.drag={id:e.pointerId,x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);this.lookTween=null;e.preventDefault();});
     canvas.addEventListener('pointermove',e=>{if(!this.enabled)return;const locked=document.pointerLockElement===canvas;if(!locked&&this.drag?.id!==e.pointerId)return;const dx=locked?e.movementX:e.clientX-this.drag.x,dy=locked?e.movementY:e.clientY-this.drag.y;this.yaw+=dx*.0032*this.sensitivity;this.pitch=clamp(this.pitch-dy*.0032*this.sensitivity,-1.54,1.54);this.lookTween=null;if(this.drag){this.drag.x=e.clientX;this.drag.y=e.clientY;}this.onLook?.();e.preventDefault();});
@@ -18,11 +34,11 @@ export class Walker{
   bindJoystick(el,thumb){
     this.joyEl=el;this.thumb=thumb;
     const update=e=>{const r=el.getBoundingClientRect(),radius=r.width*.31;let x=(e.clientX-r.left-r.width/2)/radius,y=(r.top+r.height/2-e.clientY)/radius;const length=Math.hypot(x,y);if(length>1){x/=length;y/=length;}const dead=.10,scale=length>dead?(Math.min(1,length)-dead)/(1-dead)/Math.min(1,length):0;this.joy={x:x*scale,y:y*scale};thumb.style.transform=`translate(${x*radius}px,${-y*radius}px)`;};
-    el.addEventListener('pointerdown',e=>{if(!this.enabled||this.joyId!==null)return;this.joyId=e.pointerId;el.setPointerCapture(e.pointerId);document.getElementById('world').focus({preventScroll:true});update(e);e.preventDefault();});
+    el.addEventListener('pointerdown',e=>{if(!this.enabled||this.joyId!==null)return;this.joyId=e.pointerId;thumb.style.transition='none';el.setPointerCapture(e.pointerId);document.getElementById('world').focus({preventScroll:true});update(e);e.preventDefault();});
     el.addEventListener('pointermove',e=>{if(this.enabled&&e.pointerId===this.joyId){update(e);e.preventDefault();}});
     const stop=e=>{if(this.joyId===e.pointerId)this.releaseJoystick();};['pointerup','pointercancel','lostpointercapture'].forEach(t=>el.addEventListener(t,stop));['touchstart','touchmove'].forEach(t=>el.addEventListener(t,e=>e.preventDefault(),{passive:false}));
   }
-  releaseJoystick(){const id=this.joyId;this.joyId=null;this.joy={x:0,y:0};if(this.thumb)this.thumb.style.transform='';if(id!==null&&this.joyEl?.hasPointerCapture(id))this.joyEl.releasePointerCapture(id);}
+  releaseJoystick(){const id=this.joyId;this.joyId=null;this.joy={x:0,y:0};if(this.thumb){this.thumb.style.transition='transform 180ms cubic-bezier(.2,.7,.2,1)';this.thumb.style.transform='';}if(id!==null&&this.joyEl?.hasPointerCapture(id))this.joyEl.releasePointerCapture(id);}
   resetInput(){this.keys.clear();this.releaseJoystick();const id=this.drag?.id;this.drag=null;if(id!==undefined&&this.canvas.hasPointerCapture(id))this.canvas.releasePointerCapture(id);this.velocity.set(0,0);}
   aim(direction){this.lookTween={yaw:this.yaw,pitch:this.pitch,targetYaw:Math.atan2(direction.x,-direction.z),targetPitch:Math.asin(clamp(direction.y,-1,1)),elapsed:0};this.resetInput();}
   resetPosition(){this.pos.set(0,1.68,0);this.resetInput();}
@@ -35,8 +51,15 @@ export class Walker{
     let nx=this.pos.x+this.velocity.x*dt,nz=this.pos.z+this.velocity.y*dt;const r=Math.hypot(nx,nz),limit=600;if(r>limit){nx*=limit/r;nz*=limit/r;if(performance.now()-this.boundaryAt>5500){this.boundaryAt=performance.now();this.onBoundary?.();}}
     const walked=Math.hypot(nx-this.pos.x,nz-this.pos.z);this.pos.x=nx;this.pos.z=nz;this.distance+=walked;
     if(this.distance-this.stepAt>.94&&walked>.0005){this.onStep?.(this.speed);this.stepAt=this.distance;}
-    const moving=clamp(this.velocity.length()/2),bob=this.sway?Math.sin(this.distance*Math.PI*2/.94)*.012*moving*Math.min(1,this.sensitivity*4):0;
-    this.camera.position.set(this.pos.x,this.pos.y+bob,this.pos.z);this.camera.rotation.order='YXZ';this.camera.rotation.set(this.pitch,-this.yaw,0,'YXZ');
+    const moving=dt>0?clamp(walked/dt/2):0,steadiness=Math.min(1,this.sensitivity*4);
+    const gait=this.distance*Math.PI/.94;
+    const roll=this.sway?Math.sin(gait)*.0055*moving*steadiness:0;
+    const bob=this.sway?Math.sin(gait*2)*.012*moving*steadiness:0;
+    // Under a third of a degree, alternating feet, and a quick damped return.
+    // The telescope attenuates motion rather than magnifying the sway.
+    const settle=1-Math.exp(-dt*(length>.01&&this.sway?15:23));
+    this.roll+=(roll-this.roll)*settle;this.bob+=(bob-this.bob)*settle;
+    this.camera.position.set(this.pos.x,this.pos.y+this.bob,this.pos.z);this.camera.rotation.order='YXZ';this.camera.rotation.set(this.pitch,-this.yaw,this.roll,'YXZ');
     return walked;
   }
 }

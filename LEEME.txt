@@ -1,15 +1,19 @@
-A CIELO ABIERTO — TIERRA 1.0
+A CIELO ABIERTO — TIERRA 1.1
 
 PARA SUBIRLO A GITHUB PAGES
 
 1. Descomprime el ZIP.
-2. En tu repositorio nuevo, sube TODOS los archivos extraídos juntos,
+2. En tu repositorio, sube TODOS los archivos extraídos juntos,
    directamente en la raíz. index.html debe verse al abrir el repositorio.
    No subas el ZIP como si fuera la página. No cambies los nombres.
 3. Ve a Settings > Pages.
 4. En Source, elige Deploy from a branch.
 5. Elige main y / (root), y pulsa Save.
 6. Espera a que GitHub termine y abre la dirección que aparece en Pages.
+
+Si ya tenías la versión anterior, reemplaza los archivos por estos. La
+configuración de Pages se conserva. Espera a que termine la publicación y
+recarga la página para recibir los cambios.
 
 No necesitas instalar nada, compilar, configurar claves ni crear carpetas.
 El motor 3D, el catálogo y la textura de la Luna están incluidos.
@@ -40,6 +44,9 @@ EL CIELO
 
 La barra inferior recorre las 24 horas. Puedes detenerte donde quieras,
 usar los accesos Noche/Amanecer/Día/Atardecer o reproducir el ciclo.
+Al alcanzar las 24:00, el control salta al inicio (00:00) conservando el
+mismo cielo. Suelta y vuelve a deslizar de izquierda a derecha para seguir.
+No se cuentan días. La reproducción también continúa en bucle.
 La flecha invierte el sentido del tiempo. El ciclo empieza en pausa.
 En Ajustes puedes cambiar su duración y el eje del recorrido solar.
 
@@ -53,7 +60,9 @@ TELESCOPIO
 
 0× mantiene la visión normal dentro de la lente. 1×, 2× y 3× son niveles
 de acercamiento, no medidas literales de magnificación óptica.
-El último nivel permite ver la Luna grande y su textura auténtica.
+El último nivel permite ver la Luna grande y su textura auténtica, con una
+transición suave en su sombra. Los tres aumentos revelan gradualmente
+estrellas más débiles, con posiciones fijas y puntos suaves.
 El botón con una luna centra suavemente la mirada en ella cuando está
 sobre el horizonte. Si no está, mueve el ciclo hacia la noche.
 Guarda el telescopio para ajustar el campo de visión normal.
@@ -63,8 +72,16 @@ con el aumento para ayudarte a observar detalles.
 ESPACIO Y SONIDO
 
 Pradera plana de 600 metros de radio transitable. El límite invisible está
-muy lejos del borde del suelo, que continúa hasta el horizonte.
-Viento estéreo discreto y pisadas sintetizadas con variaciones. No hay música.
+muy lejos del borde del suelo, que continúa hasta el horizonte. Dos líneas
+de montes bajos rodean la pradera a partir de más de 1.8 km del centro.
+El balanceo combina una elevación mínima y una inclinación lateral menor
+a un tercio de grado. Se asienta al detenerte y se atenúa con el telescopio.
+Puedes desactivarlo en Ajustes > Exploración.
+
+Viento estéreo discreto y pisadas sintetizadas con variaciones. La mezcla
+de aire y roces lejanos del pasto cambia suavemente: más fresca al amanecer,
+abierta de día, con ráfagas suaves de tarde y más grave y calma de noche.
+No hay música ni una banda sonora espacial.
 El audio comienza al entrar; puedes regularlo o silenciarlo.
 Las preferencias de exploración se guardan solo en tu navegador.
 La sesión se pausa al dejar la pestaña en segundo plano.
@@ -84,18 +101,35 @@ inmersivo de Meta Quest quedan para una etapa posterior, como acordamos.
 El ciclo es ilustrativo: la Luna se mantiene opuesta al Sol, mientras su
 fase se controla por separado. No calcula efemérides, estación, fecha o
 posición geográfica reales. Las posiciones relativas de las estrellas
-proceden de un catálogo; la orientación del cielo está elegida para la
-experiencia. La Vía Láctea es una representación procedural tenue.
+visibles sin telescopio proceden de un catálogo; la orientación del cielo
+está elegida para la experiencia. A mayor aumento se incorpora un campo
+procedural decorativo de estrellas débiles, fijo y reproducible, además de
+las estrellas del catálogo. No es un mapa de precisión para localizar astros.
+La Vía Láctea es una representación procedural tenue, con un centro más
+amplio, nubes irregulares y surcos de polvo. Se mantiene como capa separada.
 
 VERIFICACIÓN
 
 Revisados: sintaxis y referencias locales; controles y límites con eventos
 simulados; interfaz de escritorio y de 390 × 844; bloqueo del FOV; y
-compilación/renderizado de los seis shaders mediante OpenGL por software,
-incluyendo día, atardecer, noche, Luna nueva, creciente y llena.
+compilación/renderizado de los ocho shaders mediante OpenGL por software,
+incluyendo día, atardecer, noche, montes, Luna nueva, creciente y llena.
+Comprobados el disco solar al mediodía con y sin zoom, la aparición de
+estrellas adicionales, el balanceo y su retorno, y el salto de 24:00 a 00:00
+con teclado y arrastre. Ambos extremos conservan las mismas posiciones
+celestes. Las cuatro mezclas de audio son continuas también en medianoche.
 El navegador de revisión tenía WebGL deshabilitado: la interfaz se comprobó
 por separado del motor 3D. No se ha probado directamente en un iPhone físico
 ni se ha medido el rendimiento real de Safari en ese dispositivo.
 La entrega usa el motor WebGL real; no contiene el adaptador de revisión.
+
+CAMBIOS DE LA VERSIÓN 1.1
+
+- Sol visible al mediodía; Sol y Luna moderadamente más grandes.
+- Sombra lunar más suave, sin desenfocar el mapa de cráteres.
+- Balanceo lateral discreto al caminar y retorno amortiguado.
+- Vía Láctea con más variedad, montes bajos y más estrellas con el zoom.
+- Control de tiempo en bucle; menús y joystick con transiciones suaves.
+- Ambiente sonoro variable según el momento del ciclo.
 
 Los créditos y licencias están en CREDITOS.txt y los dos archivos LICENSE.

@@ -35,7 +35,42 @@ export class Terrain{
       float grain=(hash(gl_FragCoord.xy)-.5)/255.;gl_FragColor=vec4(col+grain,1.);
     }`});
     this.ground=new THREE.Mesh(geometry,mat);scene.add(this.ground);
+    this.createHills(scene);
     this.createGrass(scene,mobile?32000:48000);
+  }
+  createHills(scene){
+    // Two low, static ridges well beyond the walkable area. 3,072 triangles in
+    // total; no model downloads, height-map textures or per-frame mesh work.
+    this.hills=[];
+    for(let layer=0;layer<2;layer++){
+      const vertices=[],indices=[],segments=256,rows=4;
+      const radii=layer?[4350,5700,6850,7750]:[1850,2950,3900,4650];
+      const profile=[0,1,.38,0];
+      for(let row=0;row<rows;row++)for(let i=0;i<=segments;i++){
+        const a=i/segments*Math.PI*2,offset=layer*1.73;
+        const broad=.5+.5*Math.sin(a*3.+offset+.75*Math.sin(a*2.));
+        const shoulder=.5+.5*Math.sin(a*7.-offset+.5*Math.sin(a*4.));
+        const folds=Math.sin(a*13.+offset)*.5+Math.sin(a*19.-offset)*.24;
+        const height=(layer?76:25)+Math.pow(broad,1.65)*(layer?110:86)+shoulder*22+folds*7;
+        const radius=radii[row]+Math.sin(a*5.+offset)*95*(row===0?0:1);
+        vertices.push(Math.sin(a)*radius,Math.max(0,height)*profile[row]-.25,Math.cos(a)*radius);
+        if(row<rows-1&&i<segments){const k=row*(segments+1)+i,n=k+segments+1;indices.push(k,n,k+1,k+1,n,n+1);}
+      }
+      const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geometry.setIndex(indices);geometry.computeVertexNormals();
+      const material=new THREE.ShaderMaterial({uniforms:{...this.u,ridgeLayer:{value:layer}},side:THREE.DoubleSide,toneMapped:false,
+        vertexShader:`varying vec3 vWorld,vNormal;void main(){vWorld=(modelMatrix*vec4(position,1.)).xyz;vNormal=normal;gl_Position=projectionMatrix*viewMatrix*vec4(vWorld,1.);}`,
+        fragmentShader:`varying vec3 vWorld,vNormal;uniform float ridgeLayer;${common}
+          void main(){vec3 n=normalize(vNormal);float slope=.65+.35*max(0.,dot(n,sunDirection));float patch=noise(vWorld.xz*.006);
+            vec3 base=mix(vec3(.19,.27,.16),vec3(.28,.34,.22),patch);
+            vec3 lit=illumination(base,slope);lit=mix(lit,vec3(.008,.012,.015)+base*moonlight*.09,1.-daylight);
+            float toward=dot(normalize(vWorld.xz-eye.xz),normalize(sunDirection.xz+vec2(.0001)))*.5+.5;
+            vec3 haze=mix(vec3(.045,.057,.076),vec3(.57,.67,.67),daylight);
+            haze=mix(haze,vec3(.72,.44,.30),twilight*pow(toward,4.)*.68);
+            float distance=length(vWorld.xz-eye.xz);float air=(.34+ridgeLayer*.15+smoothstep(1700.,7200.,distance)*.12)*(.45+.55*daylight);
+            vec3 color=mix(lit,haze,air);gl_FragColor=vec4(color,1.);
+          }`});
+      const ridge=new THREE.Mesh(geometry,material);ridge.name='hills-'+layer;scene.add(ridge);this.hills.push(ridge);
+    }
   }
   createGrass(scene,count){
     let seed=74219;const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};

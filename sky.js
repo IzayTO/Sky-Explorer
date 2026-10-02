@@ -26,7 +26,7 @@ export function phaseName(p){if(p<.012||p>.988)return 'Luna nueva';if(Math.abs(p
 export class Sky {
   constructor(scene,moonTexture){
     this.sun=new THREE.Vector3();this.moon=new THREE.Vector3();this.field=new THREE.Matrix4();this.equatorialTilt=new THREE.Matrix4().makeRotationX(-69*Math.PI/180);this.rotation=new THREE.Matrix4();
-    this.u={inverseProjection:{value:new THREE.Matrix4()},cameraWorld:{value:new THREE.Matrix4()},sunDirection:{value:this.sun},moonDirection:{value:this.moon},day:{value:1},twilight:{value:0},night:{value:0},moonlight:{value:0},sunset:{value:1},phase:{value:.17},time:{value:0},moonMap:{value:moonTexture},pixelRatio:{value:1},fov:{value:100},starLimit:{value:5.8},field:{value:this.field},milkyOn:{value:1},galacticNormal:{value:new THREE.Vector3()},galacticCenter:{value:new THREE.Vector3()},galacticTangent:{value:new THREE.Vector3()}};
+    this.u={inverseProjection:{value:new THREE.Matrix4()},cameraWorld:{value:new THREE.Matrix4()},sunDirection:{value:this.sun},moonDirection:{value:this.moon},day:{value:1},twilight:{value:0},night:{value:0},moonlight:{value:0},sunset:{value:1},phase:{value:.17},time:{value:0},moonMap:{value:moonTexture},pixelRatio:{value:1},zoomReveal:{value:0},starLimit:{value:5.8},field:{value:this.field},milkyOn:{value:1},galacticNormal:{value:new THREE.Vector3()},galacticCenter:{value:new THREE.Vector3()},galacticTangent:{value:new THREE.Vector3()}};
     this.atmosphere=backdrop(scene,this.u,`
       varying vec3 vRay;uniform vec3 sunDirection;uniform vec3 moonDirection;uniform float day,twilight,night,moonlight,sunset;
       void main(){
@@ -50,14 +50,16 @@ export class Sky {
         float away=pow(1.-toward,3.);
         sky=mix(sky,vec3(.085,.095,.17),twilight*away*(1.-smoothstep(.03,.25,d.y))*.55);
         sky=mix(sky,vec3(.42,.31,.40),twilight*away*exp(-pow((d.y-.13)*11.,2.))*.22);
-        float cosSun=clamp(dot(d,sunDirection),-1.,1.);
-        float sunAngular=acos(cosSun);
-        float disk=1.-smoothstep(.00425,.00480,sunAngular);
+        // atan(cross, dot) retains precision near the centre, including at 3×.
+        // Disc diameter is independent of the existing atmospheric halo.
+        float sunAngular=atan(length(cross(d,sunDirection)),dot(d,sunDirection));
+        float solarAA=max(fwidth(sunAngular),.000025);
+        float disk=1.-smoothstep(.0072-solarAA,.0072+solarAA,sunAngular);
         float solarUp=smoothstep(-.055,.015,sh);
         vec3 sunColor=mix(vec3(1.,.38,.10),vec3(1.,.96,.78),smoothstep(-.01,.23,sh));
         float halo=exp(-sunAngular*20.)*.16+exp(-sunAngular*160.)*.19;
         sky+=sunColor*(halo+disk*1.75)*solarUp;
-        float moonAngle=acos(clamp(dot(d,moonDirection),-1.,1.));
+        float moonAngle=atan(length(cross(d,moonDirection)),dot(d,moonDirection));
         sky+=vec3(.19,.23,.29)*moonlight*(exp(-moonAngle*12.)*.11+exp(-moonAngle*80.)*.12);
         sky+=moonlight*vec3(.008,.011,.018)*(1.-height*.6);
         if(d.y<0.)sky=mix(horizon,sky,smoothstep(-.08,0.,d.y));
@@ -70,15 +72,25 @@ export class Sky {
       varying vec3 vRay;uniform vec3 galacticNormal,galacticCenter,galacticTangent;uniform float night,moonlight,milkyOn;
       ${noiseGLSL}
       void main(){vec3 d=normalize(vRay);float lat=dot(d,galacticNormal);vec3 g=vec3(dot(d,galacticCenter),lat,dot(d,galacticTangent));
-        float n=fbm(g*13.5);float warp=(n-.5)*.035;
-        float band=exp(-pow((lat+warp)*9.3,2.));
-        float central=pow(max(0.,dot(d,galacticCenter)),8.);
-        float broad=exp(-pow(lat*5.8,2.))*central;
-        float rift=exp(-pow((lat+.018+sin(g.z*11.)*.012+(n-.5)*.045)*42.,2.));
-        float structure=.27+.73*smoothstep(.21,.8,n);
-        float dust=band*structure*(1.-rift*.76)+broad*.18;
+        // Cartesian galactic coordinates avoid a longitude seam. Unequal arms,
+        // an extended central bulge and local dust lanes replace a uniform band.
+        float clouds=fbm(g*vec3(8.,17.,10.)+vec3(3.1,7.4,1.2));
+        float knots=noise3(g*32.+vec3(9.2,1.8,4.));
+        float fine=noise3(g*83.+vec3(4.7,12.,6.));
+        float central=pow(max(0.,g.x),6.);
+        float arm=.40+.36*noise3(vec3(g.x*4.,g.z*4.,2.8))+.38*central;
+        float bend=.022*sin(g.z*5.+g.x*2.)+(clouds-.5)*.065;
+        float width=.052+.040*clouds+.083*central;
+        float band=exp(-pow((lat+bend)/width,2.));
+        float bulge=exp(-pow((lat+.025)/(.12+.055*central),2.))*central;
+        float ridge=.021+.033*sin(g.z*4.-g.x*2.)+(clouds-.5)*.05;
+        float rift=exp(-pow((lat+ridge)/(.011+.023*knots),2.));
+        float riftMask=smoothstep(-.5,.6,g.x)*(.35+.65*knots);
+        float branch=exp(-pow((lat-.055+g.z*.047+(knots-.5)*.027)/.018,2.))*central;
+        float texture=.22+.95*smoothstep(.24,.79,clouds)+.16*knots+.07*fine;
+        float dust=(band*arm*texture+bulge*.30)*(1.-rift*riftMask*.89)*(1.-branch*.60);
         float veil=night*milkyOn*(1.-moonlight*.82)*smoothstep(.0,.23,d.y);
-        vec3 color=mix(vec3(.052,.062,.071),vec3(.075,.072,.063),central*.7);
+        vec3 color=mix(vec3(.053,.065,.078),vec3(.104,.089,.069),central*.82);
         gl_FragColor=vec4(color*dust*veil,1.);
       }`,-9999,true);
     this.createStars(scene);
@@ -87,15 +99,17 @@ export class Sky {
       void main(){
         vec3 d=normalize(vRay);float forward=dot(d,moonDirection);if(forward<.9998)discard;
         vec3 right=normalize(cross(moonDirection,vec3(0.,1.,0.)));vec3 up=normalize(cross(right,moonDirection));
-        vec2 p=vec2(dot(d,right),dot(d,up))/max(forward,.001)/.0046;
+        vec2 p=vec2(dot(d,right),dot(d,up))/max(forward,.001)/.00665;
         float radius=length(p);float aa=max(fwidth(radius),.0005);if(radius>1.+aa)discard;
         float z=sqrt(max(0.,1.-dot(p,p)));vec3 normal=vec3(p.x,p.y,z);
         vec2 uv=vec2(.5+atan(normal.x,normal.z)/6.283185307,.5+asin(clamp(normal.y,-1.,1.))/3.141592654);
         vec3 tex=texture2D(moonMap,uv).rgb;float luminance=dot(tex,vec3(.299,.587,.114));
         // Rotating illumination yields a continuous terminator on a spherical disc.
         vec3 light=vec3(sin(phase*6.283185307),.025,-cos(phase*6.283185307));
-        float lambert=dot(normal,normalize(light));float terminator=smoothstep(-.012,.012,lambert);
-        float lightness=(.32+.68*sqrt(max(lambert,0.)))*terminator;
+        float lambert=dot(normal,normalize(light));float terminator=smoothstep(-.055,.070,lambert);
+        // A narrow penumbra and a continuous light response, with the map still
+        // sharp: the boundary softens without blurring craters or the outer limb.
+        float lightness=(.18+.82*sqrt(max(lambert,0.)))*terminator;
         vec3 lit=vec3(.94,.94,.90)*pow(luminance,.80)*(lightness*1.45);
         float earthshine=.018*(1.-moonlight);
         lit+=tex*earthshine*(1.-terminator);
@@ -108,16 +122,28 @@ export class Sky {
   createStars(scene){
     const p=[],mag=[],color=[],seed=[];
     for(let i=0;i<catalog.length;i+=4){let v=equatorial(catalog[i],catalog[i+1]);p.push(v.x,v.y,v.z);mag.push(catalog[i+2]);const bv=clamp(catalog[i+3],-.4,2.);const warm=clamp((bv-.25)/1.5),cool=clamp((.3-bv)/.7);color.push(1.-cool*.24,1.-warm*.18-cool*.08,1.-warm*.4);seed.push((i*.618034)%17);}
+    // Faint, deterministic decorative field for optical depth beyond the real
+    // magnitude-8 catalogue. Invisible to the naked eye; never regenerated on zoom.
+    let rng=413928;const random=()=>{rng=(Math.imul(rng,1664525)+1013904223)>>>0;return rng/4294967296;};
+    const gn=equatorial(192.8595,27.1283),gc=equatorial(266.4051,-28.9362),gt=new THREE.Vector3().crossVectors(gn,gc).normalize();
+    for(let i=0;i<96000;i++){
+      const angle=random()*TAU,y=random()*2-1,r=Math.sqrt(1-y*y);let v=new THREE.Vector3(Math.cos(angle)*r,y,Math.sin(angle)*r);
+      if(i%3===0){const latitude=(random()+random()+random()-1.5)*.24;v.copy(gc).multiplyScalar(Math.cos(angle)).addScaledVector(gt,Math.sin(angle)).multiplyScalar(Math.cos(latitude)).addScaledVector(gn,Math.sin(latitude)).normalize();}
+      p.push(v.x,v.y,v.z);mag.push(8.05+Math.pow(random(),.68)*2.15);const tint=random();color.push(.80+tint*.20,.87+tint*.09,1.-tint*.18);seed.push(random()*17);
+    }
     const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(p,3));geo.setAttribute('magnitude',new THREE.Float32BufferAttribute(mag,1));geo.setAttribute('starColor',new THREE.Float32BufferAttribute(color,3));geo.setAttribute('seed',new THREE.Float32BufferAttribute(seed,1));
+    this.catalogCount=catalog.length/4;this.starCount=mag.length;
     const mat=new THREE.ShaderMaterial({uniforms:this.u,depthWrite:false,depthTest:false,transparent:false,blending:THREE.AdditiveBlending,toneMapped:false,
-      vertexShader:`attribute float magnitude,seed;attribute vec3 starColor;uniform mat4 field;uniform vec3 sunDirection;uniform float night,moonlight,starLimit,pixelRatio,time;varying vec3 vColor;varying float vAlpha;
+      vertexShader:`attribute float magnitude,seed;attribute vec3 starColor;uniform mat4 field;uniform vec3 sunDirection;uniform float night,moonlight,starLimit,pixelRatio,time,zoomReveal;varying vec3 vColor;varying float vAlpha;
         void main(){vec3 dir=mat3(field)*position;vec3 vd=mat3(viewMatrix)*dir;vec4 projected=projectionMatrix*vec4(vd,1.);gl_Position=projected.w>0.?vec4(projected.xy,projected.w*.99999,projected.w):vec4(2.,2.,2.,1.);
           float visible=1.-smoothstep(starLimit-.5,starLimit+.22,magnitude);
           float strength=pow(10.,-.17*(magnitude-1.));
           float twilightVis=1.-smoothstep(-.24,.04,sunDirection.y);float brightness=clamp(strength,.065,1.2);
+          float faint=smoothstep(4.8,8.,magnitude);
+          brightness+=faint*zoomReveal*(.23+.07*zoomReveal);
           float duskLimit=mix(1.5,starLimit,twilightVis);
           visible*=1.-smoothstep(duskLimit-.4,duskLimit+.6,magnitude);
-          gl_PointSize=(1.2+clamp(5.4-magnitude,0.,6.)*.47)*pixelRatio;
+          gl_PointSize=(1.2+clamp(5.4-magnitude,0.,6.)*.47+zoomReveal*(.75+faint*.35))*pixelRatio;
           float scintillation=1.+.035*sin(time*1.4+seed*3.)*sin(time*.51+seed);
           vAlpha=visible*brightness*smoothstep(-.008,.11,dir.y)*twilightVis*(1.-moonlight*.3)*scintillation;
           vColor=starColor;
@@ -127,18 +153,23 @@ export class Sky {
   }
   update(camera,state,t,pixelRatio){
     const a=(state.hour-6)/24*TAU,path=state.path*Math.PI/2;
-    this.sun.set(Math.cos(a),Math.sin(a)*.9205,-Math.sin(a)*.3907).applyAxisAngle(new THREE.Vector3(0,1,0),path);
+    // Rounded orbital coefficients used to shorten this vector around noon.
+    // With acos(dot) that made the smallest possible angle larger than the disc.
+    this.sun.set(Math.cos(a),Math.sin(a)*.9205,-Math.sin(a)*.3907).applyAxisAngle(new THREE.Vector3(0,1,0),path).normalize();
     this.moon.copy(this.sun).negate();
     const sh=this.sun.y,day=smooth(-.16,.25,sh),twilight=Math.exp(-Math.pow((sh-.004)/.135,2))*smooth(-.3,-.12,sh);
     this.day=day;this.twilight=twilight;this.night=1-smooth(-.23,.015,sh);
     this.illumination=(1-Math.cos(state.phase*TAU))*.5;
     this.moonlight=Math.pow(this.illumination,1.4)*smooth(-.01,.3,this.moon.y)*(1-day);
-    Object.entries({day,twilight,night:this.night,moonlight:this.moonlight,sunset:state.hour>12?1:0,phase:state.phase,time:t,pixelRatio,starLimit:5.65+2.6*state.zoomReveal,milkyOn:state.milky?1:0}).forEach(([k,v])=>this.u[k].value=v);
+    Object.entries({day,twilight,night:this.night,moonlight:this.moonlight,sunset:state.hour>12?1:0,phase:state.phase,time:t,pixelRatio,zoomReveal:state.zoomReveal,starLimit:5.65+4.8*Math.pow(state.zoomReveal,.78),milkyOn:state.milky?1:0}).forEach(([k,v])=>this.u[k].value=v);
     camera.updateMatrixWorld();this.u.inverseProjection.value.copy(camera.projectionMatrixInverse);this.u.cameraWorld.value.copy(camera.matrixWorld);
-    this.rotation.makeRotationY((state.hour-21)/24*TAU+.5);this.field.multiplyMatrices(this.equatorialTilt,this.rotation);
+    // Place the richer galactic centre above the horizon through the night in
+    // this illustrative sky, while retaining a seamless 24-hour rotation.
+    this.rotation.makeRotationY((state.hour-13)/24*TAU+.5);this.field.multiplyMatrices(this.equatorialTilt,this.rotation);
     this.u.galacticNormal.value.copy(equatorial(192.8595,27.1283)).applyMatrix4(this.field);
     this.u.galacticCenter.value.copy(equatorial(266.4051,-28.9362)).applyMatrix4(this.field);
     this.u.galacticTangent.value.crossVectors(this.u.galacticNormal.value,this.u.galacticCenter.value).normalize();
     this.stars.visible=sh<.04;this.milkyWay.visible=this.night>.001&&state.milky;this.moonMesh.visible=this.moon.y>-.025;
+    this.stars.geometry.setDrawRange(0,this.u.starLimit.value>7.83?this.starCount:this.catalogCount);
   }
 }

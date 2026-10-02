@@ -1,7 +1,7 @@
 import * as THREE from './three.module.js';
-import {Sky,clamp,phaseName} from './sky.js';
+import {Sky,clamp,smooth,phaseName} from './sky.js';
 import {Terrain} from './terrain.js';
-import {Walker} from './controls.js';
+import {Walker,bindTimeLoop,cycleHour} from './controls.js';
 import {Ambience} from './sound.js';
 
 const $=id=>document.getElementById(id),mobile=matchMedia('(pointer:coarse)').matches,reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -28,6 +28,16 @@ try{const saved=JSON.parse(localStorage.getItem('a-cielo-abierto-prefs-v1')||'nu
 function save(){try{const {fov,speed,volume,milky,sway,quality,duration}=state;localStorage.setItem('a-cielo-abierto-prefs-v1',JSON.stringify({fov,speed,volume,milky,sway,quality,duration}));}catch{}}
 let renderer,scene,camera,sky,terrain,walker,audio,raf,frameTime=0,elapsed=0,uiTime=0,performanceFrames=0,performanceSum=0,autoScale=1,contextLost=false,phaseImageData;
 let targetHour=null;
+const surfaceAnimations=new WeakMap();
+function showSurface(el,show){
+  const wasHidden=el.hidden,style=wasHidden?null:getComputedStyle(el);
+  const from={opacity:style?style.opacity:0,transform:style?style.transform:'translateY(8px) scale(.99)'};
+  surfaceAnimations.get(el)?.cancel();el.hidden=false;el.inert=!show;
+  if(reduced||!el.animate){el.hidden=!show;return;}
+  const animation=el.animate([from,{opacity:show?1:0,transform:show?'translateY(0) scale(1)':'translateY(6px) scale(.99)'}],{duration:show?280:190,easing:'cubic-bezier(.2,.7,.2,1)',fill:'both'});
+  surfaceAnimations.set(el,animation);
+  animation.onfinish=()=>{if(surfaceAnimations.get(el)!==animation)return;el.hidden=!show;animation.cancel();surfaceAnimations.delete(el);};
+}
 
 function viewport(){return {w:window.innerWidth,h:window.innerHeight};}
 function targetFov(){if(!state.scope||state.zoom===0)return state.fov;const {w,h}=viewport();return [0,14,4,1.05][state.zoom]/Math.min(1,w/h);}
@@ -62,10 +72,10 @@ function bindUI(){
   $('settings-button').addEventListener('click',()=>setPanel(!state.panel));$('close-settings').addEventListener('click',()=>setPanel(false));
   const tabs=[$('sky-tab'),$('walk-tab')];tabs.forEach((tab,index)=>{tab.addEventListener('click',()=>activateTab(index));tab.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();activateTab(e.key==='Home'?0:e.key==='End'?1:1-index,true);}});});
   function activateTab(index,focus=false){tabs.forEach((tab,i)=>{tab.setAttribute('aria-selected',i===index);tab.tabIndex=i===index?0:-1;$(tab.getAttribute('aria-controls')).hidden=i!==index;});if(focus)tabs[index].focus();}
-  $('time').addEventListener('input',e=>{state.hour=Number(e.target.value);state.playing=false;targetHour=null;updateReadouts();});
+  bindTimeLoop($('time'),hour=>{state.hour=hour;state.playing=false;targetHour=null;updateReadouts();});
   $('play').addEventListener('click',()=>{state.playing=!state.playing;targetHour=null;updateReadouts();});
   $('cycle-direction').addEventListener('click',()=>{state.direction*=-1;icon($('cycle-direction'),state.direction===1?'forward':'backward');toast(state.direction===1?'El tiempo avanza.':'El tiempo retrocede.');});
-  $('timeline-toggle').addEventListener('click',()=>{const folded=$('timeline').classList.toggle('collapsed');$('timeline-toggle').setAttribute('aria-expanded',!folded);$('timeline-toggle').setAttribute('aria-label',folded?'Desplegar ciclo':'Plegar ciclo');});
+  $('timeline-toggle').addEventListener('click',()=>{const folded=$('timeline').classList.toggle('collapsed');$('timeline-toggle').setAttribute('aria-expanded',!folded);$('timeline-toggle').setAttribute('aria-label',folded?'Desplegar ciclo':'Plegar ciclo');document.querySelector('.timeline-body').inert=folded;});
   document.querySelectorAll('[data-hour]').forEach(b=>b.addEventListener('click',()=>{targetHour={from:state.hour,to:Number(b.dataset.hour),elapsed:0};state.playing=false;updateReadouts();}));
   $('phase').addEventListener('input',e=>{state.targetPhase=Number(e.target.value)/1000;});document.querySelectorAll('[data-phase]').forEach(b=>b.addEventListener('click',()=>{state.targetPhase=Number(b.dataset.phase);$('phase').value=state.targetPhase*1000;}));
   $('duration').addEventListener('input',e=>{state.duration=Number(e.target.value);$('duration-value').textContent=`${state.duration} min`;save();});
@@ -90,9 +100,9 @@ function bindUI(){
   document.addEventListener('pointerdown',e=>{if(state.panel&&!$('settings').contains(e.target)&&!$('settings-button').contains(e.target))setPanel(false,false);});
   updateReadouts();
 }
-function setPanel(open,focus=true){state.panel=open;$('settings').hidden=!open;$('settings-button').setAttribute('aria-expanded',open);document.body.classList.toggle('panel-open',open);walker.enabled=state.active&&!open;walker.resetInput();if(open){if(document.pointerLockElement)document.exitPointerLock();if(focus)$('close-settings').focus();}else if(focus)$('settings-button').focus();}
+function setPanel(open,focus=true){state.panel=open;showSurface($('settings'),open);$('settings-button').setAttribute('aria-expanded',open);document.body.classList.toggle('panel-open',open);walker.enabled=state.active&&!open;walker.resetInput();if(open){if(document.pointerLockElement)document.exitPointerLock();if(focus)$('close-settings').focus();}else if(focus)$('settings-button').focus();}
 function hideUI(hidden){state.hiddenUI=hidden;if(hidden)setPanel(false,false);document.body.classList.toggle('ui-hidden',hidden);$('hud').inert=hidden;$('show-ui').hidden=!hidden;if(hidden)$('show-ui').focus();else $('world').focus({preventScroll:true});}
-function setScope(on){state.scope=on;document.body.classList.toggle('using-scope',on);$('lens').classList.toggle('active',on);$('scope-controls').hidden=!on;$('scope-button').setAttribute('aria-pressed',on);$('scope-button').setAttribute('aria-label',on?'Guardar telescopio':'Usar telescopio');$('scope-label').textContent=on?'Guardar':'Telescopio';$('fov').disabled=on;$('fov-note').textContent=on?'Guarda el telescopio para cambiar el campo de visión.':'Se ajusta con el telescopio guardado.';if(on)walker.resetInput();}
+function setScope(on){state.scope=on;document.body.classList.toggle('using-scope',on);$('lens').classList.toggle('active',on);showSurface($('scope-controls'),on);$('scope-button').setAttribute('aria-pressed',on);$('scope-button').setAttribute('aria-label',on?'Guardar telescopio':'Usar telescopio');$('scope-label').textContent=on?'Guardar':'Telescopio';$('fov').disabled=on;$('fov-note').textContent=on?'Guarda el telescopio para cambiar el campo de visión.':'Se ajusta con el telescopio guardado.';if(on)walker.resetInput();}
 function setZoom(level){state.zoom=level;document.querySelectorAll('[data-zoom]').forEach(b=>b.setAttribute('aria-pressed',Number(b.dataset.zoom)===level));}
 function syncPreferences(){for(const id of ['fov','speed','duration','quality'])$(id).value=state[id];$('volume').value=Math.round(state.volume*100);$('milky').checked=state.milky;$('sway').checked=state.sway;$('fov-value').textContent=state.fov+'°';$('speed-value').textContent=state.speed.toFixed(1)+'×';$('volume-value').textContent=Math.round(state.volume*100)+' %';$('duration-value').textContent=state.duration+' min';if(mobile)$('device-hint').textContent='Joystick para caminar · Arrastra para mirar';}
 function updateReadouts(){
@@ -106,17 +116,17 @@ function updateReadouts(){
 }
 function setupMoonPreview(image){const c=document.createElement('canvas');c.width=256;c.height=128;const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(image,0,0,256,128);phaseImageData=ctx.getImageData(0,0,256,128).data;drawPhase();}
 function drawPhase(){if(!phaseImageData)return;const c=$('phase-preview'),ctx=c.getContext('2d'),n=104,data=ctx.createImageData(n,n),a=state.phase*Math.PI*2;
-  for(let y=0;y<n;y++)for(let x=0;x<n;x++){const px=(x+.5-n/2)/(n/2-2),py=(n/2-y-.5)/(n/2-2),rr=px*px+py*py;if(rr>=1)continue;const z=Math.sqrt(1-rr),dot=px*Math.sin(a)-z*Math.cos(a);const u=.5+Math.atan2(px,z)/(Math.PI*2),v=.5-Math.asin(py)/Math.PI;const src=(clamp(Math.floor(v*128),0,127)*256+clamp(Math.floor(u*256),0,255))*4,dst=(y*n+x)*4,k=dot>0?.4+.6*Math.sqrt(dot):.035;for(let b=0;b<3;b++)data.data[dst+b]=phaseImageData[src+b]*k*1.4;data.data[dst+3]=255;}ctx.putImageData(data,0,0);
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){const px=(x+.5-n/2)/(n/2-2),py=(n/2-y-.5)/(n/2-2),rr=px*px+py*py;if(rr>=1)continue;const z=Math.sqrt(1-rr),dot=(px*Math.sin(a)+py*.025-z*Math.cos(a))/Math.hypot(1,.025);const u=.5+Math.atan2(px,z)/(Math.PI*2),v=.5-Math.asin(py)/Math.PI;const src=(clamp(Math.floor(v*128),0,127)*256+clamp(Math.floor(u*256),0,255))*4,dst=(y*n+x)*4,edge=smooth(-.055,.070,dot),k=(.18+.82*Math.sqrt(Math.max(0,dot)))*edge+.018*(1-edge);for(let b=0;b<3;b++)data.data[dst+b]=phaseImageData[src+b]*k*1.4;data.data[dst+3]=255;}ctx.putImageData(data,0,0);
 }
 function frame(now){
   if(document.hidden||contextLost)return;raf=requestAnimationFrame(frame);const raw=frameTime?(now-frameTime)/1000:1/60;const dt=Math.min(.05,raw);frameTime=now;elapsed+=dt;
   if(targetHour){targetHour.elapsed+=dt;const p=clamp(targetHour.elapsed/.9),s=p*p*(3-2*p);state.hour=targetHour.from+(targetHour.to-targetHour.from)*s;if(p===1)targetHour=null;}
-  else if(state.active&&state.playing)state.hour=(state.hour+state.direction*Math.min(raw,1)*24/(state.duration*60)+24)%24;
+  else if(state.active&&state.playing)state.hour=cycleHour(state.hour+state.direction*Math.min(raw,1)*24/(state.duration*60));
   state.phase+=(state.targetPhase-state.phase)*(1-Math.exp(-dt*10));if(Math.abs(state.targetPhase-state.phase)<.00001)state.phase=state.targetPhase;
   const reveal=state.scope?state.zoom/3:0;state.zoomReveal+=(reveal-state.zoomReveal)*(1-Math.exp(-dt*5));
   const desired=targetFov();camera.fov=Math.exp(Math.log(camera.fov)+(Math.log(desired)-Math.log(camera.fov))*(1-Math.exp(-dt*(reduced?20:5))));if(Math.abs(camera.fov-desired)<.0001)camera.fov=desired;camera.updateProjectionMatrix();
   walker.sensitivity=state.scope?Math.max(.008,Math.tan(camera.fov*Math.PI/360)/Math.tan(state.fov*Math.PI/360)):1;walker.update(dt);
-  sky.update(camera,state,elapsed,pixelRatio());terrain.update(camera,sky,elapsed);audio.update(elapsed,sky.night);renderer.render(scene,camera);
+  sky.update(camera,state,elapsed,pixelRatio());terrain.update(camera,sky,elapsed);audio.update(elapsed,sky.night,state.hour);renderer.render(scene,camera);
   uiTime+=dt;if(uiTime>.12){uiTime=0;updateReadouts();}
   // Reduce only pixel density under sustained pressure. Sky layers, lunar map,
   // star catalogue and grass geometry remain intact; never degrade from one spike.
