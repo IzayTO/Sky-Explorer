@@ -1,43 +1,86 @@
-A CIELO ABIERTO — TIERRA Y LUNA 2.0
+A CIELO ABIERTO — TIERRA Y LUNA 2.1
 
-PARA SUBIRLO A GITHUB PAGES
+ACTUALIZACIÓN SOBRE LA ENTREGA 2.0
 
-1. Descomprime el ZIP.
-2. En tu repositorio, sube TODOS los archivos extraídos juntos,
-   directamente en la raíz. index.html debe verse al abrir el repositorio.
-   No subas el ZIP como si fuera la página. No cambies los nombres.
-3. Ve a Settings > Pages.
-4. En Source, elige Deploy from a branch.
-5. Elige main y / (root), y pulsa Save.
-6. Espera a que GitHub termine y abre la dirección que aparece en Pages.
+Este ZIP es un parche: contiene únicamente 9 archivos sueltos.
 
-Si ya tenías la versión anterior, reemplaza los archivos por estos. La
-configuración de Pages se conserva. Espera a que termine la publicación y
-recarga la página para recibir los cambios.
+REEMPLAZA estos 8 archivos, con los mismos nombres y en la raíz:
+index.html, styles.css, app.js, sky.js, terrain.js, lunar-sky.js,
+lunar-terrain.js y LEEME.txt.
 
-No necesitas instalar nada, compilar, configurar claves ni crear carpetas.
-El motor 3D, el catálogo, el relieve y todas las texturas están incluidos.
-Abre el enlace de Pages en Safari o Chrome; la vista previa de Archivos de
-iPhone no ejecuta una página 3D con módulos JavaScript.
+AÑADE este archivo nuevo en esa misma raíz:
+flashlight.js.
+
+Conserva todos los demás archivos que ya subiste, incluidos el motor 3D,
+el catálogo y las texturas. No borres el repositorio ni cambies Pages.
+No subas el ZIP sin descomprimir. No se requieren carpetas ni compilación.
+Espera a que Pages termine de publicar y recarga. Si ves la versión anterior,
+en computadora usa Ctrl+Shift+R (Cmd+Shift+R en Mac); en teléfono cierra
+la pestaña anterior y abre de nuevo el enlace de Pages.
+
+CAMBIOS DE ESTA ACTUALIZACIÓN
+
+- Sol y Luna desde Tierra: diámetro visible aproximadamente 3,6 y 3,8
+  veces mayor. Desde Luna: Sol aproximadamente 3,4 veces, Tierra 3,5 veces.
+  Son tamaños visuales elegidos siguiendo las guías dibujadas; no están
+  a escala angular astronómica. El brillo del terreno no se multiplica
+  por el nuevo tamaño de los discos.
+- Halo solar lunar más amplio, óptico y suave; se atenúa gradualmente
+  al sacar el Sol del campo visual o al quedar oculto por el relieve.
+- La fase de la Tierra siempre responde a la dirección real del Sol
+  de este ciclo. El deslizador de fase mueve también la línea de tiempo;
+  ya no hay una lámpara manual desconectada de la posición solar.
+- Linterna en Tierra y Luna con el mismo haz, casi el doble de ancho
+  a igual distancia; centro suave, anillo exterior y alcance gradual.
+- Cielo lunar más poblado y brillante. Se recupera en aproximadamente
+  un segundo al apartar la mirada de las fuentes luminosas.
+- Se comparten los búferes de estrellas entre destinos, se evitan cálculos
+  de cámara y de vista previa cuando no cambian, y la linterna deja de
+  recorrer muestras de sombra una vez que el haz está totalmente oculto.
+  El relieve, las texturas y las capas de cielo se mantienen.
+- La brújula conserva los puntos cardinales al dar varias vueltas.
+- Telescopio terrestre recalibrado para que la Luna ampliada todavía se
+  vea grande y completa al centrarla a 3×. Desde Luna, la Tierra ampliada
+  sobrepasa la lente a gran aumento, como se pidió.
+
+PONER TU PROPIA TEXTURA DE LA TIERRA
+
+Sí: reemplaza únicamente earth.jpg por tu mapa. El código lo envuelve
+sobre la esfera automáticamente, con las mismas fases, giro e iluminación.
+
+Formato: JPEG real, nombre exacto earth.jpg (minúsculas).
+Proyección: equirectangular de toda la superficie, 360° × 180°.
+Proporción: 2:1, el ancho debe ser el doble de la altura.
+Recomendado: 4096 × 2048 píxeles. También sirve 2048 × 1024.
+Orientación: norte arriba y sur abajo. El mapa debe unir bien sus extremos.
+Colores: sRGB; textura de color diurna, sin etiquetas ni sombra nocturna
+pintada. No sirve un mapa Mercator, una foto circular o una imagen de
+un solo hemisferio. Si trae nubes, quedarán integradas en la textura;
+el proyecto no añade otra capa de nubes encima.
+
+Exporta o convierte realmente a JPEG; cambiar solo la extensión de un PNG
+no lo convierte. Sube earth.jpg en la raíz reemplazando el anterior,
+espera la publicación y recarga para actualizar la imagen guardada.
+Esta actualización NO incluye ni sustituye earth.jpg.
 
 CÓMO EXPLORAR
 
 Ahora puedes entrar en Tierra o Luna desde la portada.
-El paisaje, el cielo, la pradera y el sonido de Tierra se conservan.
-La novedad compartida es el salto, con la gravedad de cada destino.
+Cada destino conserva sus controles, su paisaje y su sonido.
+Ambos tienen salto con su propia gravedad, además de linterna.
 
 TELÉFONO
 - Joystick: caminar en cualquier dirección.
 - Arrastra con otro dedo para mirar mientras caminas.
 - Botón con flecha hacia arriba junto al joystick: saltar.
-- En Luna, el botón de linterna enciende/apaga la luz.
+- El botón de linterna enciende/apaga la luz en ambos destinos.
 - Ajustes: cielo, fases, velocidad, visión, sonido y calidad.
 - El ojo oculta los controles; vuelve a pulsarlo para mostrarlos.
 
 COMPUTADORA
 - W/A/S/D: caminar. Q/E o flechas laterales: girar.
 - Arrastra el ratón para mirar. Doble clic: capturar el ratón; Esc: liberar.
-- Espacio: saltar. F: linterna (Luna).
+- Espacio: saltar. F: linterna (ambos destinos).
 - T: telescopio; 0/1/2/3: aumentos cuando está abierto.
 - H: ocultar/mostrar controles. M: silenciar/activar ambiente.
 
@@ -70,9 +113,8 @@ La mirada condiciona la visibilidad de las estrellas: el Sol dentro del
 campo visual las apaga rápidamente; el terreno brillante también reduce
 su visibilidad. La Tierra tiene un efecto más moderado. Al mirar un cielo
 oscuro alejado de esas luces, las estrellas y la Vía Láctea se recuperan
-gradualmente. Espera unos segundos para empezar a ver el cambio.
-La adaptación a oscuridad está acelerada para la experiencia: su constante
-de recuperación es de 8,5 s (aproximadamente 25 s para recuperar el 95 %).
+gradualmente, en aproximadamente un segundo (99 % de recuperación).
+La adaptación a oscuridad está acelerada para esta experiencia.
 No pretende reproducir los muchos minutos de adaptación completa del ojo.
 
 La Tierra proyecta una luz azul blanca muy suave sobre las pendientes que
@@ -96,10 +138,10 @@ como en Tierra. Al llegar al extremo derecho, el control vuelve al inicio.
 El punto de observación representa la cara cercana: la Tierra permanece
 casi fija y tiene una oscilación pequeña. El Sol atraviesa el cielo según
 un horizonte local de latitud lunar media. No hay una atmósfera que coloree
-su salida o puesta. La Tierra tiene fases ligadas por defecto a la posición
+su salida o puesta. La Tierra tiene fases ligadas siempre a la posición
 del Sol; el lado oscuro no tiene luces urbanas. Si mueves el deslizador de
-fase, la iluminación pasa a control manual. Activa «Fase ligada al ciclo»
-para recuperar la relación con el Sol. El terminador tiene una transición
+fase, también cambia el momento del ciclo, manteniendo alineada la luz.
+El terminador tiene una transición
 suave sobre una esfera, sin desenfocar toda su textura.
 
 Para cerrar el bucle visual, la textura terrestre completa 29 giros por
@@ -109,9 +151,9 @@ El modelo de órbita es aproximado: usa el día sinódico y la rotación
 sincrónica como base, con libración ilustrativa. No calcula una efeméride
 para una fecha concreta, eclipses, precesión o perturbaciones orbitales.
 La orientación del catálogo se escoge para la experiencia y cierra en bucle.
-El tamaño angular de la Tierra está realzado moderadamente hasta unos
-2,52° para facilitar verla en una pantalla; no es una escala astronómica
-estricta. La Tierra del cielo emplea una ilustración geográfica local de
+Los tamaños aparentes se amplían según las referencias visuales: desde
+Luna, la Tierra ocupa unos 8,9°; el Sol, unos 3,6°. Desde Tierra, la Luna
+y el Sol ocupan unos 2,9° y 3,0°. No es una escala astronómica estricta. La Tierra del cielo emplea una ilustración geográfica local de
 4096 × 2048 con continentes, océanos, casquetes y nubes procedurales.
 No es una fotografía satelital de NASA ni un mapa de precisión.
 
@@ -126,7 +168,10 @@ modificar el campo de visión normal.
 
 Se mantiene el catálogo real de 41 411 estrellas y su campo adicional
 procedural de 96 000 puntos débiles con posiciones estables. Desde la Luna
-se revela un umbral mayor de estrellas, sin centelleo atmosférico. El zoom
+se revelan aproximadamente 66 000 posiciones potenciales en el conjunto
+de toda la esfera al estar completamente adaptado y sin zoom, frente a
+un umbral mucho menor en la entrega anterior. No todas están en tu campo
+de visión ni se aprecian igual de brillantes. No hay centelleo atmosférico. El zoom
 revela puntos más débiles progresivamente. No se muestran todos a la vez.
 La Vía Láctea es otra capa, más visible en Luna, con polvo y densidad variada.
 No es una carta celeste para navegación astronómica.
@@ -147,7 +192,7 @@ la fase, la posición y la orientación de cada paisaje durante esa sesión.
 Las preferencias generales se guardan únicamente en tu navegador.
 La linterna se apaga al entrar y el ciclo empieza en pausa.
 
-La Luna carga sus recursos al seleccionarla. Se reutiliza el catálogo;
+La Luna carga sus recursos al seleccionarla. Se comparten los búferes del catálogo;
 los tramos lejanos del suelo tienen menos geometría que la zona transitable.
 Las sombras consultan alturas, sin ray tracing de una escena completa ni
 mapas de sombras gigantes. Las estrellas se dibujan en una sola llamada.
@@ -159,7 +204,8 @@ instalación ni conexiones a otros servicios durante la exploración.
 
 ENTREGA Y REVISIÓN
 
-Esta entrega contiene Tierra y Luna para navegador de computadora y teléfono.
+Esta actualización se aplica sobre la entrega completa 2.0 para computadora
+y teléfono.
 Meta Quest inmersivo queda para más adelante. Se revisaron la integración
 con eventos de interfaz simulados, el cambio de destinos y su recuperación,
 el salto y la caída con integración balística, y la compilación/renderizado

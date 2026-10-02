@@ -54,7 +54,7 @@ export class Sky {
         // Disc diameter is independent of the existing atmospheric halo.
         float sunAngular=atan(length(cross(d,sunDirection)),dot(d,sunDirection));
         float solarAA=max(fwidth(sunAngular),.000025);
-        float disk=1.-smoothstep(.0072-solarAA,.0072+solarAA,sunAngular);
+        float disk=1.-smoothstep(.026-solarAA,.026+solarAA,sunAngular);
         float solarUp=smoothstep(-.055,.015,sh);
         vec3 sunColor=mix(vec3(1.,.38,.10),vec3(1.,.96,.78),smoothstep(-.01,.23,sh));
         float halo=exp(-sunAngular*20.)*.16+exp(-sunAngular*160.)*.19;
@@ -97,9 +97,9 @@ export class Sky {
     this.moonMesh=backdrop(scene,this.u,`
       varying vec3 vRay;uniform vec3 moonDirection;uniform sampler2D moonMap;uniform float phase,day,night,moonlight;
       void main(){
-        vec3 d=normalize(vRay);float forward=dot(d,moonDirection);if(forward<.9998)discard;
+        vec3 d=normalize(vRay);float forward=dot(d,moonDirection);if(forward<.9995)discard;
         vec3 right=normalize(cross(moonDirection,vec3(0.,1.,0.)));vec3 up=normalize(cross(right,moonDirection));
-        vec2 p=vec2(dot(d,right),dot(d,up))/max(forward,.001)/.00665;
+        vec2 p=vec2(dot(d,right),dot(d,up))/max(forward,.001)/.0255;
         float radius=length(p);float aa=max(fwidth(radius),.0005);if(radius>1.+aa)discard;
         float z=sqrt(max(0.,1.-dot(p,p)));vec3 normal=vec3(p.x,p.y,z);
         vec2 uv=vec2(.5+atan(normal.x,normal.z)/6.283185307,.5+asin(clamp(normal.y,-1.,1.))/3.141592654);
@@ -169,7 +169,7 @@ export class Sky {
     this.u.galacticNormal.value.copy(equatorial(192.8595,27.1283)).applyMatrix4(this.field);
     this.u.galacticCenter.value.copy(equatorial(266.4051,-28.9362)).applyMatrix4(this.field);
     this.u.galacticTangent.value.crossVectors(this.u.galacticNormal.value,this.u.galacticCenter.value).normalize();
-    this.stars.visible=sh<.04;this.milkyWay.visible=this.night>.001&&state.milky;this.moonMesh.visible=this.moon.y>-.025;
+    this.stars.visible=sh<.04;this.milkyWay.visible=this.night>.001&&state.milky;this.moonMesh.visible=this.moon.y>-.04;
     this.stars.geometry.setDrawRange(0,this.u.starLimit.value>7.83?this.starCount:this.catalogCount);
   }
 }

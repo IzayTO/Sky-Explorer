@@ -1,5 +1,6 @@
 import * as THREE from './three.module.js';
-import {clamp} from './sky.js';
+import {clamp} from './sky.js?v=2.1';
+import {flashlightGLSL} from './flashlight.js?v=2.1';
 
 // One continuous height field drives both the drawn surface and foot collision.
 // Directional and torch occlusion sample that same field: no fake shadow decals.
@@ -17,14 +18,14 @@ export class LunarTerrain{
     this.material=new THREE.ShaderMaterial({uniforms:this.u,extensions:{derivatives:true},vertexShader:`varying vec3 vWorld,vNormal;
       void main(){vWorld=position;vNormal=normal;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
       fragmentShader:`precision highp float;varying vec3 vWorld,vNormal;uniform sampler2D heightMap,grain;uniform vec3 sun,earth,eye,forward;uniform float earthPower,torch,quality;
-      float elevation(vec2 p){vec2 uv=(p+2048.)/4096.*(1024./1025.)+.5/1025.;vec2 c=texture2D(heightMap,uv).rg;return dot(c,vec2(65280.,255.))/65535.*256.-128.;}
+      ${flashlightGLSL}
       float triangleHeight(vec2 p);
       float shadow(vec3 p,vec3 light){if(light.y<-.02)return 0.;float visible=1.,dist=2.;
         for(int i=0;i<21;i++){vec3 q=p+light*dist;if(max(abs(q.x),abs(q.z))>2046.)break;float gap=q.y-triangleHeight(q.xz);visible=min(visible,smoothstep(-.28,.32+dist*.003,gap));if(visible<.015)break;dist=dist*1.37+1.8;}
         return visible;}
       float cornerHeight(vec2 grid){vec2 c=texture2D(heightMap,(grid+.5)/1025.).rg;return dot(c,vec2(65280.,255.))/65535.*256.-128.;}
       float triangleHeight(vec2 p){vec2 g=(p+2048.)/4.,i=floor(g),f=fract(g);float b=cornerHeight(i+vec2(1.,0.)),c=cornerHeight(i+vec2(0.,1.));if(f.x+f.y<=1.){float a=cornerHeight(i);return a+(b-a)*f.x+(c-a)*f.y;}float d=cornerHeight(i+vec2(1.));return d+(c-d)*(1.-f.x)+(b-d)*(1.-f.y);}
-      float torchShadow(vec3 p,vec3 l,float len){float v=1.;for(int i=1;i<13;i++){float f=float(i)/13.;vec3 q=p+l*len*f;v=min(v,smoothstep(-.08,.12,q.y-triangleHeight(q.xz)));}return v;}
+      float torchShadow(vec3 p,vec3 l,float len){float v=1.;for(int i=1;i<13;i++){float f=float(i)/13.;vec3 q=p+l*len*f;v=min(v,smoothstep(-.08,.12,q.y-triangleHeight(q.xz)));if(v<.001)break;}return v;}
       void main(){vec3 p=vWorld,n=normalize(vNormal);float distanceToEye=distance(p,eye);
         float grains=texture2D(grain,p.xz*.19).r;float mottling=texture2D(grain,p.xz*.0071+vec2(.34,.57)).r;
         // Screen-space differential micro-normal. It fades before it aliases.
@@ -37,11 +38,8 @@ export class LunarTerrain{
         float s=0.,e=0.;if(solar>.001&&sun.y>-.01)s=solar*shadow(safePoint,sun);
         if(earthPower>.0001&&earthLit>.001)e=earthLit*shadow(safePoint,earth)*earthPower;
         vec3 illumination=vec3(.000025)+vec3(1.,.98,.93)*s*1.38+vec3(.46,.63,1.)*e;
-        if(torch>.001){vec3 delta=eye-p;float len=length(delta);vec3 toLamp=delta/max(len,.001);float aim=dot(-toLamp,forward);float radial=sqrt(max(0.,1.-aim*aim))/max(aim,.001)/.55;
-          float central=1.-smoothstep(.49,.75,radial);float ring=exp(-pow((radial-.82)/.055,2.))*.16;
-          float spill=(1.-smoothstep(.79,1.03,radial))*.15;
-          float beam=(central+ring+spill)*smoothstep(0.,.08,aim)*(1.-smoothstep(75.,100.,len));
-          if(beam>.001){float occlusion=torchShadow(safePoint,toLamp,len);float intensity=beam*torch*2.8/(1.+len*len/170.);illumination+=vec3(.92,.96,1.)*(.12+.88*max(dot(n,toLamp),0.))*occlusion*intensity;}}
+        if(torch>.001){float beam=flashlightBeam(p-eye,forward)*torch;
+          if(beam>.001){vec3 delta=eye-p;float len=length(delta);vec3 toLamp=delta/max(len,.001);float occlusion=torchShadow(safePoint,toLamp,len);illumination+=vec3(.92,.96,1.)*(.12+.88*max(dot(n,toLamp),0.))*occlusion*beam;}}
         float albedo=.28+(mottling-.5)*.16+(grains-.5)*.12;
         vec3 linear=vec3(albedo*.99,albedo,albedo*1.015)*illumination;
         vec3 color=pow(max(linear,vec3(0.)),vec3(1./2.2));

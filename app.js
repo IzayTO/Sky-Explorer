@@ -1,10 +1,10 @@
 import * as THREE from './three.module.js';
-import {Sky,clamp,smooth,phaseName} from './sky.js';
-import {Terrain} from './terrain.js';
+import {Sky,clamp,smooth,phaseName} from './sky.js?v=2.1';
+import {Terrain} from './terrain.js?v=2.1';
 import {Walker,bindTimeLoop,cycleHour} from './controls.js?v=2.0-luna';
 import {Ambience} from './sound.js?v=2.0-luna';
-import {LunarSky,MOON_GRAVITY} from './lunar-sky.js';
-import {LunarTerrain} from './lunar-terrain.js';
+import {LunarSky,MOON_GRAVITY} from './lunar-sky.js?v=2.1';
+import {LunarTerrain} from './lunar-terrain.js?v=2.1';
 import {LunarAmbience} from './lunar-sound.js';
 
 const $=id=>document.getElementById(id),mobile=matchMedia('(pointer:coarse)').matches,reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -28,12 +28,12 @@ const icons={
 const icon=(el,name)=>el.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true">${icons[name]||icons.eye}</svg>`;
 document.querySelectorAll('[data-icon]').forEach(el=>icon(el,el.dataset.icon));
 let toastTimer;function toast(message){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),3600);}
-const state={destination:'earth',phaseLinked:true,flashlight:false,hour:17.8,phase:.17,targetPhase:.17,playing:false,direction:1,duration:12,path:0,fov:100,speed:1,volume:.35,milky:true,sway:!reduced,quality:'auto',scope:false,zoom:0,zoomReveal:0,active:false,hiddenUI:false,panel:false};
+const state={destination:'earth',flashlight:false,hour:17.8,phase:.17,targetPhase:.17,playing:false,direction:1,duration:12,path:0,fov:100,speed:1,volume:.35,milky:true,sway:!reduced,quality:'auto',scope:false,zoom:0,zoomReveal:0,active:false,hiddenUI:false,panel:false};
 // Only personal preferences are local. Every fresh visit starts at sunset.
 try{const saved=JSON.parse(localStorage.getItem('a-cielo-abierto-prefs-v1')||'null');if(saved){for(const key of ['fov','speed','volume','milky','sway','quality','duration'])if(saved[key]!==undefined)state[key]=saved[key];state.fov=clamp(Number(state.fov)||100,55,120);state.speed=clamp(Number(state.speed)||1,.4,4);state.volume=clamp(Number(state.volume)||0);state.duration=clamp(Number(state.duration)||12,2,60);if(!['auto','high','balanced'].includes(state.quality))state.quality='auto';}}catch{}
 function save(){try{const {fov,speed,volume,milky,sway,quality,duration}=state;localStorage.setItem('a-cielo-abierto-prefs-v1',JSON.stringify({fov,speed,volume,milky,sway,quality,duration}));}catch{}}
 let renderer,scene,camera,sky,terrain,walker,audio,raf,frameTime=0,elapsed=0,uiTime=0,performanceFrames=0,performanceSum=0,autoScale=1,contextLost=false,phaseImageData;
-let targetHour=null;const environments={};let switching=false;const lunarAudio=new LunarAmbience();
+let targetHour=null,phaseControlUntil=0,previewBuffer=null,lastPreviewKey='';const environments={};let switching=false;const lunarAudio=new LunarAmbience();
 const surfaceAnimations=new WeakMap();
 function showSurface(el,show){
   const wasHidden=el.hidden,style=wasHidden?null:getComputedStyle(el);
@@ -46,7 +46,7 @@ function showSurface(el,show){
 }
 
 function viewport(){return {w:window.innerWidth,h:window.innerHeight};}
-function targetFov(){if(!state.scope||state.zoom===0)return state.fov;const {w,h}=viewport();return [0,14,4,1.05][state.zoom]/Math.min(1,w/h);}
+function targetFov(){if(!state.scope||state.zoom===0)return state.fov;const {w,h}=viewport();const levels=state.destination==='moon'?[0,14,4,1.05]:[0,20,8,4.1];return levels[state.zoom]/Math.min(1,w/h);}
 function pixelRatio(){const base=Math.min(devicePixelRatio||1,mobile?1.65:2);return state.quality==='high'?Math.min(devicePixelRatio||1,2):state.quality==='balanced'?Math.min(base,1.25):base*autoScale;}
 function resize(){if(!renderer)return;const {w,h}=viewport();renderer.setPixelRatio(pixelRatio());renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
 window.addEventListener('resize',resize);window.visualViewport?.addEventListener('resize',resize);
@@ -75,7 +75,7 @@ async function prepareMoon(){
   const [earth,height,regolith]=await Promise.all(['earth.jpg','lunar-height.png','regolith.jpg'].map(name=>loader.loadAsync(new URL('./'+name,import.meta.url).href)));
   earth.colorSpace=THREE.NoColorSpace;earth.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),8);earth.wrapS=THREE.RepeatWrapping;
   const lunarScene=new THREE.Scene(),lunarSky=new LunarSky(lunarScene,environments.earth.sky,earth),lunarTerrain=new LunarTerrain(lunarScene,height,regolith,mobile);lunarSky.terrain=lunarTerrain;
-  return environments.moon={scene:lunarScene,sky:lunarSky,terrain:lunarTerrain,audio:lunarAudio,preview:earth.image,saved:{hour:8.6,phase:.25,targetPhase:.25,phaseLinked:true,path:0,pos:null,yaw:-1.8,pitch:.23}};
+  return environments.moon={scene:lunarScene,sky:lunarSky,terrain:lunarTerrain,audio:lunarAudio,preview:earth.image,saved:{hour:8.6,phase:.25,targetPhase:.25,path:0,pos:null,yaw:-1.8,pitch:.23}};
 }
 async function enterDestination(destination){
   if(switching)return;switching=true;$('enter').disabled=true;$('moon-destination').disabled=true;
@@ -85,9 +85,9 @@ async function enterDestination(destination){
   $('fade').classList.add('on');$('loading-error').hidden=true;
   try{
     if(destination==='moon'){$('moon-enter-label').textContent='Abriendo…';await new Promise(resolve=>requestAnimationFrame(resolve));await prepareMoon();}
-    if(destination!==state.destination){const old=environments[state.destination];old.saved={hour:state.hour,phase:state.phase,targetPhase:state.targetPhase,phaseLinked:state.phaseLinked,path:state.path,pos:walker.pos.clone(),yaw:walker.yaw,pitch:walker.pitch};
+    if(destination!==state.destination){const old=environments[state.destination];old.saved={hour:state.hour,phase:state.phase,targetPhase:state.targetPhase,path:state.path,pos:walker.pos.clone(),yaw:walker.yaw,pitch:walker.pitch};
       const env=environments[destination];scene=env.scene;sky=env.sky;terrain=env.terrain;audio=env.audio;state.destination=destination;
-      const saved=env.saved;if(saved){Object.assign(state,{hour:saved.hour,phase:saved.phase,targetPhase:saved.targetPhase,phaseLinked:saved.phaseLinked,path:saved.path});}
+      const saved=env.saved;if(saved){Object.assign(state,{hour:saved.hour,phase:saved.phase,targetPhase:saved.targetPhase,path:saved.path});}
       walker.setEnvironment(destination==='moon'?(x,z)=>terrain.heightAt(x,z):null,destination==='moon'?MOON_GRAVITY:9.80665);
       if(saved){if(saved.pos){walker.pos.copy(saved.pos);walker.pos.y=walker.groundHeight(walker.pos.x,walker.pos.z)+1.68;}walker.yaw=saved.yaw;walker.pitch=saved.pitch;}
       setupMoonPreview(env.preview);
@@ -100,15 +100,23 @@ async function enterDestination(destination){
   }catch(error){console.error(error);nextAudio.pause();$('loading-error').hidden=false;$('loading-error').textContent='No se pudo abrir este paisaje. Revisa que todos los archivos del ZIP estén juntos.';$('fade').classList.remove('on');}
   finally{switching=false;$('enter').disabled=false;$('moon-destination').disabled=false;$('moon-enter-label').textContent='Explorar';}
 }
-function setFlashlight(on){state.flashlight=state.destination==='moon'&&on;$('flashlight-setting').checked=state.flashlight;$('flashlight-button').setAttribute('aria-pressed',state.flashlight);$('flashlight-button').setAttribute('aria-label',state.flashlight?'Apagar linterna':'Encender linterna');}
+function setFlashlight(on){state.flashlight=Boolean(on);$('flashlight-setting').checked=state.flashlight;$('flashlight-button').setAttribute('aria-pressed',state.flashlight);$('flashlight-button').setAttribute('aria-label',state.flashlight?'Apagar linterna':'Encender linterna');}
+function selectPhase(value,preset=false){
+  if(state.destination==='moon'){
+    const hour=sky.hourForPhase(value),delta=((hour-state.hour+36)%24)-12;
+    targetHour={from:state.hour,to:state.hour+delta,elapsed:0,duration:preset?.5:.16};
+    phaseControlUntil=elapsed+(preset?.55:.20);state.playing=false;
+  }else state.targetPhase=value;
+  $('phase').value=value*1000;
+}
 function applyDestinationUI(){
-  const lunar=state.destination==='moon';document.body.classList.toggle('on-moon',lunar);$('destination-label').textContent=lunar?'LUNA':'TIERRA';$('phase-label').textContent=lunar?'Fase de la Tierra':'Fase lunar';$('lunar-phase-link').hidden=!lunar;$('phase-linked').checked=state.phaseLinked;$('solar-path-field').hidden=lunar;$('flashlight-button').hidden=!lunar;$('lunar-flash-setting').hidden=!lunar;
+  const lunar=state.destination==='moon';document.body.classList.toggle('on-moon',lunar);$('destination-label').textContent=lunar?'LUNA':'TIERRA';$('phase-label').textContent=lunar?'Fase de la Tierra':'Fase lunar';$('lunar-phase-link').hidden=!lunar;$('solar-path-field').hidden=lunar;$('flashlight-button').hidden=false;$('lunar-flash-setting').hidden=false;
   $('sky-note').textContent=lunar?'El cielo se revela al apartar la mirada de la luz. La Tierra permanece casi fija sobre este horizonte.':'Su brillo aparece al caer la noche y se atenúa con la luz de la Luna.';
-  $('gravity-note').textContent=lunar?'Un salto más alto, una caída más lenta. Espacio: saltar · F: linterna.':'Espacio o el botón de salto para saltar.';
+  $('gravity-note').textContent=lunar?'Un salto más alto, una caída más lenta. Espacio: saltar · F: linterna.':'Espacio: saltar · F: linterna. También puedes usar los botones junto al joystick.';
   $('aim-moon').setAttribute('aria-label',lunar?'Centrar la Tierra':'Centrar la Luna');$('aim-moon').title=lunar?'Centrar la Tierra':'Centrar la Luna';icon($('aim-moon'),lunar?'earth':'moon');
   $('phase').value=state.phase*1000;const marks=document.querySelectorAll('.time-marks span');marks.forEach((mark,i)=>mark.textContent=lunar?['0 %','25','50','75','100 %'][i]:['00','06','12','18','24'][i]);
   const preset=document.querySelectorAll('[data-hour]');preset.forEach((el,i)=>el.textContent=lunar?['Noche','Salida del Sol','Día','Puesta del Sol','Noche'][i]:['Noche','Amanecer','Día','Atardecer','Noche'][i]);
-  if(mobile)$('controls-help').innerHTML='<p>Joystick: caminar · Arrastra con otro dedo para mirar.</p><p>Flecha hacia arriba: saltar.'+(lunar?' Botón de linterna: iluminar el terreno.':'')+'</p>';
+  if(mobile)$('controls-help').innerHTML='<p>Joystick: caminar · Arrastra con otro dedo para mirar.</p><p>Flecha hacia arriba: saltar. Botón de linterna: iluminar el terreno.</p>';
   updateReadouts();
 }
 function bindUI(){
@@ -117,7 +125,6 @@ function bindUI(){
   $('home').addEventListener('click',()=>{state.active=false;walker.enabled=false;walker.resetInput();state.playing=false;setScope(false);setPanel(false);if(document.pointerLockElement)document.exitPointerLock();audio.pause();$('welcome').hidden=false;requestAnimationFrame(()=>$('welcome').classList.remove('leaving'));$('hud').hidden=true;$('enter').focus();});
   $('jump-button').addEventListener('click',()=>walker.jump());
   $('flashlight-button').addEventListener('click',()=>setFlashlight(!state.flashlight));$('flashlight-setting').addEventListener('change',e=>setFlashlight(e.target.checked));
-  $('phase-linked').addEventListener('change',e=>{state.phaseLinked=e.target.checked;});
   $('settings-button').addEventListener('click',()=>setPanel(!state.panel));$('close-settings').addEventListener('click',()=>setPanel(false));
   const tabs=[$('sky-tab'),$('walk-tab')];tabs.forEach((tab,index)=>{tab.addEventListener('click',()=>activateTab(index));tab.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();activateTab(e.key==='Home'?0:e.key==='End'?1:1-index,true);}});});
   function activateTab(index,focus=false){tabs.forEach((tab,i)=>{tab.setAttribute('aria-selected',i===index);tab.tabIndex=i===index?0:-1;$(tab.getAttribute('aria-controls')).hidden=i!==index;});if(focus)tabs[index].focus();}
@@ -126,7 +133,7 @@ function bindUI(){
   $('cycle-direction').addEventListener('click',()=>{state.direction*=-1;icon($('cycle-direction'),state.direction===1?'forward':'backward');toast(state.direction===1?'El tiempo avanza.':'El tiempo retrocede.');});
   $('timeline-toggle').addEventListener('click',()=>{const folded=$('timeline').classList.toggle('collapsed');$('timeline-toggle').setAttribute('aria-expanded',!folded);$('timeline-toggle').setAttribute('aria-label',folded?'Desplegar ciclo':'Plegar ciclo');document.querySelector('.timeline-body').inert=folded;});
   document.querySelectorAll('[data-hour]').forEach(b=>b.addEventListener('click',()=>{targetHour={from:state.hour,to:Number(b.dataset.hour),elapsed:0};state.playing=false;updateReadouts();}));
-  $('phase').addEventListener('input',e=>{state.targetPhase=Number(e.target.value)/1000;if(state.destination==='moon'){state.phaseLinked=false;$('phase-linked').checked=false;}});document.querySelectorAll('[data-phase]').forEach(b=>b.addEventListener('click',()=>{state.targetPhase=Number(b.dataset.phase);if(state.destination==='moon'){state.phaseLinked=false;$('phase-linked').checked=false;}$('phase').value=state.targetPhase*1000;}));
+  $('phase').addEventListener('input',e=>selectPhase(Number(e.target.value)/1000));document.querySelectorAll('[data-phase]').forEach(b=>b.addEventListener('click',()=>selectPhase(Number(b.dataset.phase),true)));
   $('duration').addEventListener('input',e=>{state.duration=Number(e.target.value);$('duration-value').textContent=`${state.duration} min`;save();});
   document.querySelectorAll('[data-path]').forEach(b=>b.addEventListener('click',()=>{state.path=Number(b.dataset.path);document.querySelectorAll('[data-path]').forEach(el=>el.setAttribute('aria-pressed',el===b));}));
   $('milky').addEventListener('change',e=>{state.milky=e.target.checked;save();});
@@ -142,7 +149,7 @@ function bindUI(){
   $('hide-ui').addEventListener('click',()=>hideUI(true));$('show-ui').addEventListener('click',()=>hideUI(false));
   window.addEventListener('keydown',e=>{if(!state.active||e.repeat||e.metaKey||e.ctrlKey||e.altKey)return;const tag=e.target.tagName;if(tag==='SELECT'||e.target.isContentEditable)return;
     if(e.code==='Escape'){if(state.panel)setPanel(false);else if(state.scope)setScope(false);else if(state.hiddenUI)hideUI(false);}
-    if(e.code==='KeyF'&&state.destination==='moon'){e.preventDefault();setFlashlight(!state.flashlight);}if(e.code==='KeyT'){e.preventDefault();setScope(!state.scope);}if(e.code==='KeyH'){e.preventDefault();hideUI(!state.hiddenUI);}if(e.code==='KeyM')$('sound-button').click();if(state.scope&&/^Digit[0-3]$/.test(e.code)){e.preventDefault();setZoom(Number(e.code.slice(-1)));}
+    if(e.code==='KeyF'){e.preventDefault();setFlashlight(!state.flashlight);}if(e.code==='KeyT'){e.preventDefault();setScope(!state.scope);}if(e.code==='KeyH'){e.preventDefault();hideUI(!state.hiddenUI);}if(e.code==='KeyM')$('sound-button').click();if(state.scope&&/^Digit[0-3]$/.test(e.code)){e.preventDefault();setZoom(Number(e.code.slice(-1)));}
   });
   // Keep sliders keyboard-operable, while mouse/touch release doesn't trap WASD.
   document.querySelectorAll('input[type=range]').forEach(input=>input.addEventListener('pointerup',()=>input.blur()));
@@ -159,22 +166,26 @@ function updateReadouts(){
   $('clock').textContent=time;$('time').value=state.hour;$('time').setAttribute('aria-valuetext',time);
   $('moment-name').textContent=h<4.8||h>20?'Bajo las estrellas':h<6?'Antes del amanecer':h<7.5?'La primera luz':h<16.7?'A cielo abierto':h<18?'Luz de la tarde':h<19?'El último resplandor':'La hora azul';
   icon($('play'),state.playing?'pause':'play');$('play').setAttribute('aria-pressed',state.playing);$('play').setAttribute('aria-label',state.playing?'Pausar ciclo':'Reproducir ciclo');$('timeline-status').textContent=state.playing?`Un día en ${state.duration} min`:'El tiempo está en tus manos';
-  const deg=((walker?.yaw||0)*180/Math.PI+360)%360;const labels=['N','NE','E','SE','S','SO','O','NO'];$('bearing').textContent=labels[Math.round(deg/45)%8];$('degrees').textContent=Math.round(deg)+'°';
-  if(state.destination==='moon'){$('clock').textContent=Math.round(state.hour/24*100)+' %';$('time').setAttribute('aria-valuetext','Ciclo lunar, '+Math.round(state.hour/24*100)+' por ciento');$('moment-name').textContent=sky.sun.y>.01?'Bajo el Sol':sky.illumination>.12?'La luz de la Tierra':'La noche lunar';$('timeline-status').textContent=state.playing?`Un ciclo lunar en ${state.duration} min`:'29,53 días terrestres · ciclo libre';if(state.phaseLinked)$('phase').value=state.phase*1000;}
+  const deg=(((walker?.yaw||0)*180/Math.PI)%360+360)%360;const labels=['N','NE','E','SE','S','SO','O','NO'];$('bearing').textContent=labels[Math.round(deg/45)%8];$('degrees').textContent=Math.round(deg)%360+'°';
+  if(state.destination==='moon'){$('clock').textContent=Math.round(state.hour/24*100)+' %';$('time').setAttribute('aria-valuetext','Ciclo lunar, '+Math.round(state.hour/24*100)+' por ciento');$('moment-name').textContent=sky.sun.y>.01?'Bajo el Sol':sky.illumination>.12?'La luz de la Tierra':'La noche lunar';$('timeline-status').textContent=state.playing?`Un ciclo lunar en ${state.duration} min`:'29,53 días terrestres · ciclo libre';if(elapsed>=phaseControlUntil)$('phase').value=state.phase*1000;}
   const illuminated=Math.round((1-Math.cos(state.phase*Math.PI*2))*.5*100),name=state.destination==='moon'?phaseName(state.phase).replace('Luna','Tierra'):phaseName(state.phase);$('phase-value').textContent=illuminated+' % iluminada';$('phase-name').innerHTML=`${name}<small>La luz recorre su superficie.</small>`;$('phase').setAttribute('aria-valuetext',`${name}, ${illuminated} por ciento iluminada`);
   if(state.panel&&!$('sky-settings').hidden)drawPhase();
 }
-function setupMoonPreview(image){const c=document.createElement('canvas');c.width=256;c.height=128;const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(image,0,0,256,128);phaseImageData=ctx.getImageData(0,0,256,128).data;drawPhase();}
-function drawPhase(){if(!phaseImageData)return;const c=$('phase-preview'),ctx=c.getContext('2d'),n=104,data=ctx.createImageData(n,n),a=state.phase*Math.PI*2;
-  for(let y=0;y<n;y++)for(let x=0;x<n;x++){const px=(x+.5-n/2)/(n/2-2),py=(n/2-y-.5)/(n/2-2),rr=px*px+py*py;if(rr>=1)continue;const z=Math.sqrt(1-rr),dot=(px*Math.sin(a)+py*.025-z*Math.cos(a))/Math.hypot(1,.025);const u=.5+Math.atan2(px,z)/(Math.PI*2),v=.5-Math.asin(py)/Math.PI;const src=(clamp(Math.floor(v*128),0,127)*256+clamp(Math.floor(u*256),0,255))*4,dst=(y*n+x)*4,edge=smooth(-.055,.070,dot),k=(.18+.82*Math.sqrt(Math.max(0,dot)))*edge+.018*(1-edge);for(let b=0;b<3;b++)data.data[dst+b]=phaseImageData[src+b]*k*1.4;data.data[dst+3]=255;}ctx.putImageData(data,0,0);
+function setupMoonPreview(image){const c=document.createElement('canvas');c.width=256;c.height=128;const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(image,0,0,256,128);phaseImageData=ctx.getImageData(0,0,256,128).data;lastPreviewKey='';drawPhase();}
+function drawPhase(){if(!phaseImageData)return;const lunar=state.destination==='moon',key=state.destination+':'+(lunar?state.hour:state.phase).toFixed(4);if(key===lastPreviewKey)return;lastPreviewKey=key;
+  const c=$('phase-preview'),ctx=c.getContext('2d'),n=104,data=previewBuffer||(previewBuffer=ctx.createImageData(n,n)),a=state.phase*Math.PI*2;
+  const light=lunar?sky.u.earthLight.value:null,lx=light?.x??Math.sin(a),ly=light?.y??.025,lz=light?.z??-Math.cos(a),norm=Math.hypot(lx,ly,lz)||1,spin=lunar?sky.u.earthSpin.value+.01:0,tilt=lunar?.4091:0,ct=Math.cos(tilt),st=Math.sin(tilt);
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){const px=(x+.5-n/2)/(n/2-2),py=(n/2-y-.5)/(n/2-2),rr=px*px+py*py;if(rr>=1)continue;const z=Math.sqrt(1-rr),dot=(px*lx+py*ly+z*lz)/norm,mx=px*ct-py*st,my=px*st+py*ct;
+    const u=(1.5+spin+Math.atan2(mx,z)/(Math.PI*2))%1,v=.5-Math.asin(clamp(my,-1,1))/Math.PI;
+    const src=(clamp(Math.floor(v*128),0,127)*256+clamp(Math.floor(u*256),0,255))*4,dst=(y*n+x)*4,edge=smooth(lunar?-.07:-.055,lunar?.09:.070,dot),k=(.18+.82*Math.sqrt(Math.max(0,dot)))*edge+(lunar?0:.018)*(1-edge);for(let b=0;b<3;b++)data.data[dst+b]=phaseImageData[src+b]*k*1.4;data.data[dst+3]=255;}ctx.putImageData(data,0,0);
 }
 function frame(now){
   if(document.hidden||contextLost)return;raf=requestAnimationFrame(frame);const raw=frameTime?(now-frameTime)/1000:1/60;const dt=Math.min(.05,raw);frameTime=now;elapsed+=dt;
-  if(targetHour){targetHour.elapsed+=dt;const p=clamp(targetHour.elapsed/.9),s=p*p*(3-2*p);state.hour=targetHour.from+(targetHour.to-targetHour.from)*s;if(p===1)targetHour=null;}
+  if(targetHour){targetHour.elapsed+=dt;const p=clamp(targetHour.elapsed/(targetHour.duration||.9)),s=p*p*(3-2*p);state.hour=cycleHour(targetHour.from+(targetHour.to-targetHour.from)*s);if(p===1)targetHour=null;}
   else if(state.active&&state.playing)state.hour=cycleHour(state.hour+state.direction*Math.min(raw,1)*24/(state.duration*60));
-  state.phase+=(state.targetPhase-state.phase)*(1-Math.exp(-dt*10));if(Math.abs(state.targetPhase-state.phase)<.00001)state.phase=state.targetPhase;
+  if(state.destination==='earth'){state.phase+=(state.targetPhase-state.phase)*(1-Math.exp(-dt*10));if(Math.abs(state.targetPhase-state.phase)<.00001)state.phase=state.targetPhase;}
   const reveal=state.scope?state.zoom/3:0;state.zoomReveal+=(reveal-state.zoomReveal)*(1-Math.exp(-dt*5));
-  const desired=targetFov();camera.fov=Math.exp(Math.log(camera.fov)+(Math.log(desired)-Math.log(camera.fov))*(1-Math.exp(-dt*(reduced?20:5))));if(Math.abs(camera.fov-desired)<.0001)camera.fov=desired;camera.updateProjectionMatrix();
+  const desired=targetFov();if(camera.fov!==desired){camera.fov=Math.exp(Math.log(camera.fov)+(Math.log(desired)-Math.log(camera.fov))*(1-Math.exp(-dt*(reduced?20:5))));if(Math.abs(camera.fov-desired)<.0001)camera.fov=desired;camera.updateProjectionMatrix();}
   walker.sensitivity=state.scope?Math.max(.008,Math.tan(camera.fov*Math.PI/360)/Math.tan(state.fov*Math.PI/360)):1;walker.update(dt);
   sky.update(camera,state,elapsed,pixelRatio());terrain.update(camera,sky,elapsed,state);audio.update(elapsed,sky.night,state.hour);renderer.render(scene,camera);
   uiTime+=dt;if(uiTime>.12){uiTime=0;updateReadouts();}
