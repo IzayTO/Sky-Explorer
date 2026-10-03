@@ -1,163 +1,188 @@
-A CIELO ABIERTO — PARCHE 2.2
-Controles, vehículos y Luna atmosférica
+A CIELO ABIERTO — PARCHE 2.3
+Inventario, conducción y pulido visual
 
-INSTALACIÓN SOBRE TU VERSIÓN ACTUAL (2.1)
+INSTALACIÓN SOBRE LA VERSIÓN 2.2
 
-Este ZIP contiene 12 archivos sueltos. Descomprímelo y sube su contenido
-junto a los archivos existentes, respetando los nombres.
+Este ZIP contiene 13 archivos sueltos, sin carpetas.
+Descomprímelo y coloca los archivos junto a tu index.html actual.
 
 AÑADE estos 2 archivos nuevos:
-  vehicle-models.js
-  vehicles.js
+  inventory.js
+  vehicle-sound.js
 
-REEMPLAZA estos 10 archivos:
+REEMPLAZA estos 11 archivos:
   index.html
   styles.css
   app.js
   controls.js
   sky.js
   terrain.js
-  lunar-sky.js
   lunar-terrain.js
   flashlight.js
+  vehicle-models.js
+  vehicles.js
   LEEME.txt
 
-Conserva los demás archivos. No se incluyen ni se reemplazan earth.jpg,
-moon.jpg, las texturas lunares, los sonidos, el catálogo ni three.module.js.
-Si ya pusiste tu propio mapa de la Tierra, seguirá utilizándose.
-No hace falta compilar, instalar dependencias ni cambiar la configuración
-que ya tienes. Espera la publicación habitual de Pages y recarga la página.
-Si aparece la interfaz anterior, recarga con Ctrl+Shift+R o abre una pestaña
-nueva en el teléfono. El ZIP no se sube comprimido.
+Conserva todos los demás archivos de la versión 2.2. Este es un parche;
+no abre por sí solo en una carpeta vacía. No se incluye ni se modifica
+ninguna textura: earth.jpg, moon.jpg, lunar-height.png y regolith.jpg
+siguen siendo los que tienes. También conservas three.module.js,
+lunar-sky.js, sound.js, lunar-sound.js, star-catalog.js y sus créditos.
+Tu mapa personalizado de la Tierra se sigue utilizando.
 
-COMPUTADORA
+No necesitas instalar dependencias ni compilar. Sube los archivos
+individuales descomprimidos a la misma ubicación de los anteriores.
+Tras tu publicación habitual, recarga con Ctrl+Shift+R o abre una pestaña
+nueva en el teléfono si el navegador sigue mostrando la interfaz anterior.
+
+CONTROLES EN COMPUTADORA
 
   W / S o flechas arriba / abajo : avanzar / retroceder.
-  A / D                          : moverse de lado a pie; dirigir al conducir.
-  Q / E o flechas izquierda / derecha : girar.
-  Espacio                        : saltar, a pie o con el vehículo.
-  Mantener Shift                 : correr a pie, sin límite de energía.
-  Pulsar Shift al conducir       : impulso de 2,5 segundos.
-  F                              : linterna; al conducir, faros.
-  R                              : sentarse o bajar del vehículo.
-  Arrastrar                      : mirar libremente.
-  Doble clic                     : capturar el ratón; Esc para liberarlo.
-  T                              : telescopio.
-  H                              : ocultar o mostrar la interfaz.
-  M                              : sonido.
+  A / D                         : desplazarse a pie; dirigir al conducir.
+  Flechas izquierda / derecha   : girar (Q también permite girar a izquierda).
+  Espacio                       : saltar a pie o con el vehículo.
+  Mantener Shift                : correr a pie; boost al avanzar en vehículo.
+  Soltar Shift                  : dejar de aplicar boost.
+  F                             : linterna; en vehículo, apagados/bajas/altas.
+  E                             : sentarse o bajar. Sustituye a R.
+  B                             : abrir o cerrar la mochila.
+  1–9 y 0                       : seleccionar las 10 casillas de acceso rápido.
+  T                             : telescopio.
+  H                             : ocultar / mostrar interfaz.
+  M                             : silenciar / activar sonido.
+  Arrastrar                     : mirar libremente.
+  Doble clic                    : capturar el ratón; Esc para liberarlo.
+  Esc                           : cerrar mochila, ajustes o telescopio.
 
-En computadora no aparecen el joystick ni los botones táctiles de salto,
-linterna, sprint e impulso. La salida del vehículo conserva un botón
-visible, además de R. Los faros también se pueden elegir desde Ajustes.
+Dentro del telescopio, 0–3 conservan sus atajos de aumento. Con el
+inventario abierto, esos números seleccionan las casillas de acceso rápido.
+No hay joystick ni botones táctiles de salto, sprint o linterna en escritorio.
 
-TELÉFONO Y TABLETA
+TELÉFONO, ESPECIALMENTE EN HORIZONTAL
 
-El joystick queda a la izquierda. A pie permite avanzar, retroceder y
-moverse de lado. Al conducir, hacia los lados dirige las ruedas.
+Joystick a la izquierda; salto, luz y correr/boost a la derecha.
+Mantén presionado el rayo mientras avanzas para usar boost. Al soltarlo
+se deja de aplicar. Puedes mirar arrastrando desde los botones de acción
+sin soltar el joystick. Cada dedo conserva su propio control; abrir un
+panel, cambiar de ventana o cancelar un toque libera los botones retenidos.
 
-A la derecha están salto, linterna y correr. Mantén correr presionado para
-sprintar. Puedes arrastrar desde los botones de acción para seguir mirando
-con el mismo dedo, sin soltar el joystick. Los punteros son independientes:
-caminar, mirar, saltar y encender la luz no cancelan los otros toques.
+La mochila queda junto a las acciones del pulgar derecho. Las diez casillas
+rápidas están abajo, en el centro. Toca una para seleccionarla.
+La línea temporal está arriba y la brújula queda justo debajo, también
+cuando pliegas el ciclo. Telescopio, entrada/salida y acciones tienen zonas
+separadas. Los márgenes se adaptan a las áreas seguras del teléfono.
 
-Al subir a un vehículo desaparece correr y aparece el impulso (rayo).
-Salto se mantiene. La linterna se sustituye por los faros y aparece salir.
-Cada pulsación de luz recorre apagados → bajas → altas → apagados.
-El telescopio ocupa una fila separada de las acciones. La disposición se
-adapta a orientación vertical y horizontal y a los márgenes del teléfono.
+INVENTARIO
 
-VEHÍCULOS
+30 casillas principales vacías + 10 casillas de acceso rápido = 40 espacios.
+Dentro de la mochila aparecen en dos grupos, separados visualmente.
+Las diez de acceso rápido son las mismas de la barra inferior, no otras diez.
+La selección se refleja en ambas vistas y se mantiene durante la sesión.
+Por ahora no hay objetos, mano, equipamiento, arrastre ni fabricación.
 
-TIERRA: Sendero, una cuatrimoto de cuatro ruedas, con manillar, parrillas,
-estribos, motor, escape, suspensión, neumáticos y dos faros delanteros.
+Abrir la mochila oculta e inhabilita los controles que podrían superponerse,
+libera el movimiento y deja utilizar el diálogo sin mover la cámara.
+Ciérrala con la X, B, Esc o tocando el fondo fuera del panel.
+Los espacios vacíos admiten navegación con Tab; la selección rápida también
+se puede cambiar con el teclado. Al cerrar se recuperan los controles.
 
-LUNA: Selene, un rover abierto con dos asientos delanteros, armazón tubular,
-cinturones, consola, antena, plato de comunicaciones, equipo posterior,
-suspensión y ruedas con nervaduras. Tiene dos faros delanteros y no tiene
-techo. Es un modelo original inspirado en vehículos de exploración lunar;
-no es un modelo oficial descargado de NASA. El segundo asiento es visual:
-esta entrega sigue siendo una experiencia de un solo jugador.
+VEHÍCULOS E INTERACCIÓN
 
-Los dos son modelos 3D creados en el código incluido, no imágenes planas.
-Aparecen cerca del punto de llegada. Acércate y mira hacia el vehículo:
-solo entonces aparece un círculo discreto con el icono para sentarse.
-Tócalo o pulsa R. La cámara pasa al asiento y puedes mirar alrededor sin
-cambiar hacia dónde apuntan las ruedas. Al girar el vehículo, la mirada
-acompaña el giro conservando su orientación relativa.
+Se conserva la cuatrimoto Sendero en Tierra y el rover Selene de dos asientos
+en Luna. El segundo asiento sigue siendo visual: experiencia de un jugador.
+No se ha reconstruido el rover completo. Se corrigió únicamente su antena:
+reflector parabólico con cara frontal y respaldo, borde, receptor y soportes
+alineados. Su cuerpo se ve desde ambos lados, sin dejar varillas flotantes.
 
-Aceleran y frenan progresivamente, tienen reversa y las ruedas giran y
-orientan con la dirección. Su posición se conserva al bajar y al cambiar
-de destino durante esa sesión. Volver al punto de inicio también devuelve
-el vehículo a su lugar de llegada.
+El círculo para sentarse se ancla a un punto del vehículo. Su proyección
+se actualiza en cada cuadro con la misma cámara que dibuja la escena y
+sin transición de posición; el icono siempre se ve de frente.
+Aparece al acercarte desde cualquier lado cuando ese punto entra en la
+pantalla. Ya no exige centrar el vehículo en un cono estrecho de mirada.
+Toca el icono o pulsa E. Para bajar, usa E o el botón de salida.
+Si estás en el aire, primero aterriza; la salida busca suelo junto al chasis.
 
-El salto usa el mismo botón o Espacio. El suelo y las ruedas consultan el
-relieve existente. La gravedad es 9,80665 m/s² en Tierra y 1,62 m/s² en Luna;
-por eso los saltos y las caídas lunares duran más. El impulso vertical del
-vehículo es de 3,4 m/s: sobre terreno plano equivale a unos 0,59 m de salto
-en Tierra y 3,57 m en Luna. Los vehículos pueden caer dentro de cráteres.
-La conducción y la suspensión son una aproximación ligera para esta
-experiencia, sin simulación mecánica completa de un vehículo real.
+BOOST
 
-El boost dura 2,5 segundos y después tarda 5 segundos en volver a estar
-listo. Mantener Shift no lo reactiva continuamente: suelta y pulsa de nuevo.
-No hay combustible limitado ni stamina al caminar. El pequeño indicador
-muestra velocidad, faros y disponibilidad del impulso.
+Funciona mientras mantienes Shift o el rayo y avanzas. No hay temporizador,
+recarga ni consumo de combustible. Al soltar, cesa el impulso y el vehículo
+reduce su velocidad progresivamente hasta la normal, sin un frenazo artificial.
+El límite de velocidad con boost es 2,6 veces el normal; la aceleración al
+impulsar es 3,4 veces mayor. La dirección se modera a alta velocidad para
+mantener el control. Reversa y salto conservan sus controles.
 
-Para bajar, toca salir o pulsa R. El vehículo frena y se elige una posición
-al lado, sobre el terreno y fuera de su carrocería. Si estás en el aire,
-aterriza primero. Así no se teletransporta al jugador al fondo del cráter.
+La gravedad y el impulso vertical anteriores permanecen: 9,80665 m/s² en
+Tierra y 1,62 m/s² en Luna. La física usa pasos cortos para las caídas y el
+contacto con el terreno. Conducción y suspensión siguen siendo aproximaciones
+ligeras para la experiencia, no una simulación mecánica completa.
 
-LUCES
+LUCES, SOMBRAS Y LUNA ATMOSFÉRICA
 
-Los dos focos nacen en la parte delantera del vehículo y siguen el chasis,
-incluidas pendientes y giros. No giran con la cabeza. Las bajas iluminan
-una zona ancha y cercana; las altas llegan más lejos. En Luna, el relieve
-oculta la luz y conserva sus sombras. La iluminación dentro de la vista
-participa en la atenuación del cielo, con el mismo cambio gradual existente.
+Ambos vehículos tienen dos luces rojas traseras al retroceder. Encienden y
+apagan con una transición breve y suave al empezar o dejar de dar reversa.
+Su resplandor ilumina el suelo posterior; en Luna lo oculta el relieve.
+Funcionan independientemente de que los faros delanteros estén apagados,
+en bajas o en altas. Los faros delanteros conservan su estado.
 
-La linterna personal se guarda mientras conduces. Al bajar recupera el
-estado que tenía antes de subir. Los faros conservan su estado al estacionar.
-Puedes ver el vehículo con la linterna cuando te acercas en la oscuridad.
+Las sombras del vehículo ahora incluyen volúmenes de las ruedas y siguen
+la inclinación del chasis. Se separó el origen de esta sombra del muestreo
+más elevado del relieve, que desplazaba mucho la sombra cerca del horizonte.
+Son sombras geométricas aproximadas, sin un pase adicional de mapas de sombra.
+La silueta de cada pieza pequeña no se simula individualmente.
 
-LUNA EN EL CIELO DE LA TIERRA
+En el modo Atmosférica, la parte sin luz de la Luna ya no vuelve a dibujar
+un fondo distinto: se mezcla con el cielo existente sin anillo ni borde
+circular en la zona oscura, incluso con el telescopio. La creciente conserva
+su textura y un terminador suave. Disco sólido conserva la esfera oscura.
+La preferencia y las fases siguen en Ajustes > Cielo.
 
-Ajustes > Cielo > Aspecto de la Luna:
+SONIDOS
 
-  Atmosférica (predeterminada): la zona sin luz toma el color del cielo,
-  la fase nueva desaparece y no aparece un contorno blanco en la sombra.
-  La parte iluminada conserva la textura y el terminador suave.
+El vehículo estacionado sin conductor no mantiene un motor sonando.
+Al subir hay un encendido suave y un ralentí discreto. Al comenzar a avanzar,
+la carga del motor entra gradualmente; su tono y rodadura siguen la velocidad,
+el acelerador y el boost. La reversa también mueve el motor. El contacto al
+aterrizar tiene un golpe amortiguado. Cambiar los faros produce un clic breve.
+Al bajar, el motor se desvanece y se liberan sus fuentes de audio.
 
-  Disco sólido: conserva el aspecto anterior de la parte oscura.
+Son sonidos sintetizados localmente, con tonos filtrados y ruido tenue:
+no se descargan grabaciones, no hay pitido continuo de reversa ni bocina.
+Comparten el control de volumen, silencio y pausa del ambiente. En Luna
+representan vibración percibida a bordo, no sonido propagándose por el vacío.
 
-Esta preferencia se guarda en tu navegador. No cambia las fases de la
-Tierra observada desde la Luna ni la relación entre su iluminación y el Sol.
+RENDIMIENTO Y COMPROBACIÓN
 
-TEXTURA TERRESTRE PERSONALIZADA
+El césped conserva sus 32.000 / 48.000 instancias periódicas según dispositivo,
+su densidad, forma, viento y radio de visibilidad. Se organiza en sectores:
+solo se envían a dibujar los que intersectan la vista de la cámara. El cálculo
+usa el FOV actual, incluido el telescopio, y se actualiza al girar o avanzar.
+Los sectores que cruzan un borde de la pantalla conservan un margen para
+las hojas y el viento; no se recortan bruscamente las briznas del borde.
 
-Puedes seguir reemplazando earth.jpg con un JPEG equirectangular completo,
-360° × 180°, proporción 2:1, norte arriba. Recomendado: 4096 × 2048 píxeles;
-2048 × 1024 también funciona. Usa un mapa diurno sin etiquetas ni sombras
-nocturnas pintadas. La esfera aplica iluminación y fases automáticamente.
-Cambiar la extensión de un PNG a .jpg no lo convierte: expórtalo como JPEG.
+Se reutilizan buffers, geometrías y temporales de conducción. Los modelos
+siguen usando seis llamadas de dibujo cada uno, incluida la antena reparada.
+El indicador de sentarse no reconstruye iconos cada cuadro. Los sonidos no
+crean nodos nuevos continuamente al conducir y se apagan al estacionar.
+Las dos luces delanteras mantienen sus haces y sombras cercanas por separado;
+a más de 18 m comparten una consulta de ocultación del relieve lunar, reduciendo
+trabajo repetido entre focos próximos. No se reduce la densidad visible del
+césped ni se eliminan estrellas, texturas, relieve o funciones del cielo.
 
-RENDIMIENTO Y ALCANCE
+Comprobación local: arranque de ambos destinos, entrada/salida con E, boost
+mantenido y liberación de punteros, luces traseras independientes, inventario
+30+10, selección sincronizada, cancelación de controles al abrir paneles,
+conservación de briznas visibles al cambiar posición/orientación/FOV,
+ciclo de vida y automatización del audio, compilación de shaders y render
+de antena, luces, sombras bajas y ambos aspectos de la Luna.
+No se han medido FPS ni se ha probado el tacto/sonido en un teléfono físico.
+El ZIP no incluye pruebas, capturas, herramientas ni dependencias de desarrollo.
 
-La carrocería y sus detalles se agrupan en una sola malla por vehículo;
-las cuatro ruedas y el mando son las piezas animadas. Se añaden seis
-llamadas de dibujo por vehículo. Los vehículos estacionados no repiten
-el cálculo de conducción. No se añaden archivos grandes ni descargas de
-modelos, bibliotecas o texturas externas. Se mantienen las opciones de
-resolución existentes y los límites de exploración.
+TEXTURA PERSONALIZADA DE LA TIERRA
 
-Se revisaron la integración de controles, los toques simultáneos,
-entrada/salida, fases, continuidad entre destinos, saltos, impulso y caídas,
-así como los shaders y las vistas de los modelos mediante render local.
-No se ha medido el rendimiento en un iPhone físico. El ZIP no incluye
-herramientas de revisión ni archivos de desarrollo.
+Sigue pudiendo reemplazarse earth.jpg con un JPEG equirectangular completo,
+proporción 2:1, norte arriba: 4096 × 2048 o 2048 × 1024 píxeles. Usa un mapa
+diurno sin sombras nocturnas pintadas. La esfera aplica luz y fases. Exporta
+como JPEG; renombrar un PNG a .jpg no convierte su formato.
 
-Los ajustes del cielo, tamaños, estrellas, telescopio y texturas de la
-entrega anterior se conservan. La recuperación del cielo lunar continúa
-acelerada a aproximadamente un segundo para esta experiencia. Los tamaños
-de los astros y el ciclo son ilustrativos, no una efeméride astronómica.
-
+Los ajustes anteriores de tamaños, estrellas, telescopio y cielo se conservan.
 Créditos anteriores: CREDITOS.txt, THREE-LICENSE.txt y STARS-LICENSE.txt.

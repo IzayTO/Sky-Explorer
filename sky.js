@@ -117,18 +117,22 @@ export class Sky {
         vec3 aerial=vec3(.31,.46,.60)*day;
         lit=mix(lit,aerial+lit*.48,day*.78);
         if(moonNatural>.5){
-          // Reproduce the same atmospheric radiance behind the unlit side.
-          // The opaque body still hides stars; the terminator contributes no
-          // artificial rim, and a genuinely new Moon disappears into the air.
+          // Only the illuminated surface contributes in the atmospheric mode.
+          // Unlit pixels are discarded, including the outer limb: no second
+          // sky layer can erase the Milky Way or leave a circular seam.
           float sunlit=dot(normal,vec3(sin(phase*6.283185307),0.,-cos(phase*6.283185307)));
-          float visibleLight=(.18+.82*sqrt(max(0.,sunlit)))*smoothstep(0.,.075,sunlit);
-          vec3 background=atmosphereColor(d);
-          vec3 surface=vec3(.94,.94,.90)*pow(luminance,.80)*visibleLight*1.45;
-          lit=background+surface*(1.-day*.62);
+          if(sunlit<=0.)discard;
+          float alpha=smoothstep(0.,.075,sunlit)*(1.-smoothstep(1.-aa,1.+aa,radius));
+          vec3 surface=vec3(.94,.94,.90)*pow(luminance,.80)*(.18+.82*sqrt(sunlit))*1.45;
+          gl_FragColor=vec4(atmosphereColor(d)+surface*(1.-day*.62),alpha);return;
         }
+
         // Solid lunar disc occludes the stars even near new Moon.
         gl_FragColor=vec4(lit,1.-smoothstep(1.-aa,1.+aa,radius));
       }`,-9997);
+    // Blend in sky render order, before opaque terrain (not the transparent
+    // object queue). The unlit side remains exactly the already-drawn sky.
+    Object.assign(this.moonMesh.material,{blending:THREE.CustomBlending,blendEquation:THREE.AddEquation,blendSrc:THREE.SrcAlphaFactor,blendDst:THREE.OneMinusSrcAlphaFactor});
   }
   createStars(scene){
     const p=[],mag=[],color=[],seed=[];

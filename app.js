@@ -1,15 +1,18 @@
 import * as THREE from './three.module.js';
-import {Sky,clamp,smooth,phaseName} from './sky.js?v=2.2';
-import {Terrain} from './terrain.js?v=2.2';
-import {Walker,bindTimeLoop,cycleHour} from './controls.js?v=2.2';
+import {Sky,clamp,smooth,phaseName} from './sky.js?v=2.3';
+import {Terrain} from './terrain.js?v=2.3';
+import {Walker,bindTimeLoop,cycleHour} from './controls.js?v=2.3';
 import {Ambience} from './sound.js?v=2.0-luna';
 import {LunarSky,MOON_GRAVITY} from './lunar-sky.js?v=2.2';
-import {LunarTerrain} from './lunar-terrain.js?v=2.2';
-import {Vehicle} from './vehicles.js?v=2.2';
+import {LunarTerrain} from './lunar-terrain.js?v=2.3';
+import {Vehicle} from './vehicles.js?v=2.3';
+import {VehicleSound} from './vehicle-sound.js?v=2.3';
+import {Inventory} from './inventory.js?v=2.3';
 import {LunarAmbience} from './lunar-sound.js';
 
 const $=id=>document.getElementById(id),mobile=matchMedia('(pointer:coarse)').matches,reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
 const icons={
+  backpack:'<path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M7 6h10a3 3 0 0 1 3 3v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9a3 3 0 0 1 3-3Zm-3 5H1v8h3m16-8h3v8h-3M8 13h8v6H8zM8 9h8"/>',
   seat:'<path d="M7 3v9a3 3 0 0 0 3 3h8M7 8h8v7M5 16v5m13-6v6M6 21h14"/>',
   exit:'<path d="M10 4H4v16h6m3-12 5 4-5 4m-5-4h13"/>',
   sprint:'<circle cx="15" cy="4" r="2"/><path d="m7 9 5-2 4 4 4 1M12 7l-2 7 4 2-1 5m-3-7-3 4H3"/>',
@@ -31,14 +34,14 @@ const icons={
   moon:'<path d="M20.5 13A9 9 0 0 1 11 3.5 8.8 8.8 0 1 0 20.5 13Z"/>',
   scope:'<path d="m3 13 4 8 5-3-4-8-5 3Zm5-3 4 8 6-3-5-9-5 4Zm5-4 5 9 4-2-5-10-4 3ZM2 17l2-1"/>'
 };
-const icon=(el,name)=>el.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true">${icons[name]||icons.eye}</svg>`;
+const icon=(el,name)=>{if(el.dataset.renderedIcon===name)return;el.dataset.renderedIcon=name;el.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true">${icons[name]||icons.eye}</svg>`;};
 document.querySelectorAll('[data-icon]').forEach(el=>icon(el,el.dataset.icon));
 let toastTimer;function toast(message){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),3600);}
-const state={destination:'earth',moonAppearance:'natural',headlightExposure:0,vehicleLighting:null,flashlight:false,hour:17.8,phase:.17,targetPhase:.17,playing:false,direction:1,duration:12,path:0,fov:100,speed:1,volume:.35,milky:true,sway:!reduced,quality:'auto',scope:false,zoom:0,zoomReveal:0,active:false,hiddenUI:false,panel:false};
+const state={inventory:false,destination:'earth',moonAppearance:'natural',headlightExposure:0,vehicleLighting:null,flashlight:false,hour:17.8,phase:.17,targetPhase:.17,playing:false,direction:1,duration:12,path:0,fov:100,speed:1,volume:.35,milky:true,sway:!reduced,quality:'auto',scope:false,zoom:0,zoomReveal:0,active:false,hiddenUI:false,panel:false};
 // Only personal preferences are local. Every fresh visit starts at sunset.
 try{const saved=JSON.parse(localStorage.getItem('a-cielo-abierto-prefs-v1')||'null');if(saved){for(const key of ['fov','speed','volume','milky','sway','quality','duration','moonAppearance'])if(saved[key]!==undefined)state[key]=saved[key];state.fov=clamp(Number(state.fov)||100,55,120);state.speed=clamp(Number(state.speed)||1,.4,4);state.volume=clamp(Number(state.volume)||0);state.duration=clamp(Number(state.duration)||12,2,60);if(!['auto','high','balanced'].includes(state.quality))state.quality='auto';}}catch{}
 function save(){try{const {fov,speed,volume,milky,sway,quality,duration,moonAppearance}=state;localStorage.setItem('a-cielo-abierto-prefs-v1',JSON.stringify({fov,speed,volume,milky,sway,quality,duration,moonAppearance}));}catch{}}
-let renderer,scene,camera,sky,terrain,walker,audio,vehicle,raf,frameTime=0,elapsed=0,uiTime=0,performanceFrames=0,performanceSum=0,autoScale=1,contextLost=false,phaseImageData;
+let renderer,scene,camera,sky,terrain,walker,audio,vehicle,motor,inventory,raf,frameTime=0,elapsed=0,uiTime=0,performanceFrames=0,performanceSum=0,autoScale=1,contextLost=false,phaseImageData;
 const promptPoint=new THREE.Vector3();
 let targetHour=null,phaseControlUntil=0,previewBuffer=null,lastPreviewKey='';const environments={};let switching=false;const lunarAudio=new LunarAmbience();
 const surfaceAnimations=new WeakMap();
@@ -65,8 +68,8 @@ async function init(){
     const moon=await new THREE.TextureLoader().loadAsync(new URL('./moon.jpg',import.meta.url).href);moon.colorSpace=THREE.NoColorSpace;moon.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),4);moon.minFilter=THREE.LinearMipmapLinearFilter;
     sky=new Sky(scene,moon);terrain=new Terrain(scene,mobile);audio=new Ambience();audio.setVolume(state.volume);
     walker=new Walker(camera,renderer.domElement,s=>audio.step(s),()=>toast(state.destination==='moon'?'Has llegado al límite de exploración. Sigue en otra dirección.':'Has llegado al límite de la pradera. Puedes seguir en otra dirección.'));walker.bindJoystick($('joystick'),$('joy-thumb'));walker.sway=state.sway;walker.speed=state.speed;
-    walker.onJump=()=>audio.jump();walker.onLand=impact=>audio.land(impact);
-    vehicle=new Vehicle(scene);state.vehicleLighting=vehicle.lighting;environments.earth={scene,sky,terrain,audio,vehicle,preview:moon.image,saved:null};
+    walker.onJump=()=>{if(!vehicle?.mounted)audio.jump();};walker.onLand=impact=>vehicle?.mounted?motor.land(impact):audio.land(impact);
+    vehicle=new Vehicle(scene);motor=new VehicleSound(audio);state.vehicleLighting=vehicle.lighting;environments.earth={scene,sky,terrain,audio,vehicle,motor,preview:moon.image,saved:null};
     walker.onLook=()=>{$('look-hint').style.opacity='0';};
     setupMoonPreview(moon.image);bindUI();syncPreferences();registerSkyTools();resize();walker.update(0);sky.update(camera,state,0,pixelRatio());terrain.update(camera,sky,0);renderer.compile(scene,camera);renderer.render(scene,camera);
     $('enter').disabled=false;$('enter-label').textContent='Explorar';$('moon-destination').disabled=false;$('moon-enter-label').textContent='Explorar';
@@ -83,10 +86,10 @@ async function prepareMoon(){
   earth.colorSpace=THREE.NoColorSpace;earth.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),8);earth.wrapS=THREE.RepeatWrapping;
   const lunarScene=new THREE.Scene(),lunarSky=new LunarSky(lunarScene,environments.earth.sky,earth),lunarTerrain=new LunarTerrain(lunarScene,height,regolith,mobile);lunarSky.terrain=lunarTerrain;
   const lunarVehicle=new Vehicle(lunarScene,{lunar:true,heightAt:(x,z)=>lunarTerrain.heightAt(x,z),terrain:lunarTerrain});
-  return environments.moon={vehicle:lunarVehicle,scene:lunarScene,sky:lunarSky,terrain:lunarTerrain,audio:lunarAudio,preview:earth.image,saved:{hour:8.6,phase:.25,targetPhase:.25,path:0,pos:null,yaw:-1.8,pitch:.23}};
+  return environments.moon={motor:new VehicleSound(lunarAudio,true),vehicle:lunarVehicle,scene:lunarScene,sky:lunarSky,terrain:lunarTerrain,audio:lunarAudio,preview:earth.image,saved:{hour:8.6,phase:.25,targetPhase:.25,path:0,pos:null,yaw:-1.8,pitch:.23}};
 }
 async function enterDestination(destination){
-  if(switching)return;if(vehicle?.mounted)leaveVehicle(true);switching=true;$('enter').disabled=true;$('moon-destination').disabled=true;
+  if(switching)return;if(state.inventory)setInventory(false);if(vehicle?.mounted)leaveVehicle(true);switching=true;$('enter').disabled=true;$('moon-destination').disabled=true;
   const nextAudio=destination==='moon'?lunarAudio:environments.earth.audio;nextAudio.setVolume(state.volume);
   // Resume within the initiating tap, before loading any local texture (iOS).
   const audible=nextAudio.start();if(audio!==nextAudio)audio.pause();
@@ -94,7 +97,7 @@ async function enterDestination(destination){
   try{
     if(destination==='moon'){$('moon-enter-label').textContent='Abriendo…';await new Promise(resolve=>requestAnimationFrame(resolve));await prepareMoon();}
     if(destination!==state.destination){const old=environments[state.destination];old.saved={hour:state.hour,phase:state.phase,targetPhase:state.targetPhase,path:state.path,pos:walker.pos.clone(),yaw:walker.yaw,pitch:walker.pitch};
-      const env=environments[destination];scene=env.scene;sky=env.sky;terrain=env.terrain;audio=env.audio;vehicle=env.vehicle;state.vehicleLighting=vehicle.lighting;state.destination=destination;
+      const env=environments[destination];scene=env.scene;sky=env.sky;terrain=env.terrain;audio=env.audio;vehicle=env.vehicle;motor=env.motor;state.vehicleLighting=vehicle.lighting;state.destination=destination;
       const saved=env.saved;if(saved){Object.assign(state,{hour:saved.hour,phase:saved.phase,targetPhase:saved.targetPhase,path:saved.path});}
       walker.setEnvironment(destination==='moon'?(x,z)=>terrain.heightAt(x,z):null,destination==='moon'?MOON_GRAVITY:9.80665);
       if(saved){if(saved.pos){walker.pos.copy(saved.pos);walker.pos.y=walker.groundHeight(walker.pos.x,walker.pos.z)+1.68;}walker.yaw=saved.yaw;walker.pitch=saved.pitch;}
@@ -110,7 +113,7 @@ async function enterDestination(destination){
 }
 function setFlashlight(on){state.flashlight=Boolean(on)&&!vehicle?.mounted;$('flashlight-setting').checked=state.flashlight;$('flashlight-button').setAttribute('aria-pressed',state.flashlight);$('flashlight-button').setAttribute('aria-label',state.flashlight?'Apagar linterna':'Encender linterna');}
 function useLight(){
-  if(vehicle?.mounted){vehicle.cycleLights();syncLightUI();}
+  if(vehicle?.mounted){vehicle.cycleLights();motor.switch();syncLightUI();}
   else setFlashlight(!state.flashlight);
 }
 function syncLightUI(){
@@ -131,30 +134,46 @@ function syncVehicleUI(){
   $('vehicle-enter').hidden=true;syncLightUI();
 }
 function enterVehicle(){
-  if(!vehicle.canEnter(camera,walker)||state.panel||!state.active)return;
-  const torch=state.flashlight;setScope(false);setFlashlight(false);vehicle.mount(walker);vehicle.personalTorch=torch;syncVehicleUI();
+  if(!vehicle.canEnter(camera,walker)||state.panel||state.inventory||!state.active)return;
+  const torch=state.flashlight;setScope(false);setFlashlight(false);vehicle.mount(walker);vehicle.personalTorch=torch;motor.mount();syncVehicleUI();
   $('world').focus({preventScroll:true});
 }
 function leaveVehicle(force=false){
   if(!vehicle?.mounted)return;
   const torch=vehicle.personalTorch;
   if(!vehicle.dismount(walker,force)){toast('Espera a tocar el suelo para bajar.');return;}
-  setFlashlight(torch);syncVehicleUI();$('world').focus({preventScroll:true});
+  motor.stop();setFlashlight(torch);syncVehicleUI();$('world').focus({preventScroll:true});
 }
 function updateVehicleUI(){
   const riding=vehicle.mounted;
   if(riding){
     $('vehicle-speed').textContent=Math.round(Math.abs(vehicle.speed)*3.6)+' km/h'+(vehicle.speed<-.1?' · R':'');
-    const remaining=vehicle.boostRemaining,wait=Math.max(0,vehicle.boostCooldown-remaining);
-    $('boost-status').textContent=remaining>0?'Impulso · '+remaining.toFixed(1)+' s':wait>0?'Recargando · '+Math.ceil(wait)+' s':'Impulso listo';
-    $('boost-button').setAttribute('aria-label',remaining>0?'Impulso activo':wait>0?'Impulso recargando':'Activar impulso de 2,5 segundos');
-    $('boost-button').classList.toggle('boost-active',remaining>0);$('boost-button').classList.toggle('recharging',wait>0&&remaining===0);
-    $('boost-button').style.setProperty('--charge',String(remaining>0?remaining/2.5:1-Math.min(wait/5,1)));
+    $('boost-status').textContent=vehicle.boosting?'Impulso activo':'Mantén para impulsar';
+    $('boost-button').setAttribute('aria-label',vehicle.boosting?'Impulso activo; suelta para detener':'Mantener para usar impulso');
+    $('boost-button').classList.toggle('boost-active',vehicle.boosting);
   }
-  const visible=state.active&&!state.panel&&!state.scope&&!state.hiddenUI&&vehicle.canEnter(camera,walker);
-  $('vehicle-enter').hidden=!visible;
-  if(visible){promptPoint.copy(vehicle.position);promptPoint.y+=.9;promptPoint.project(camera);$('vehicle-enter').style.left=((promptPoint.x*.5+.5)*innerWidth)+'px';$('vehicle-enter').style.top=((-promptPoint.y*.5+.5)*innerHeight)+'px';}
 }
+function updateVehiclePrompt(){
+  const button=$('vehicle-enter');
+  let visible=state.active&&!state.panel&&!state.inventory&&!state.scope&&!state.hiddenUI&&vehicle.canEnter(camera,walker);
+  if(visible){
+    vehicle.promptPosition(promptPoint).project(camera);
+    visible=promptPoint.z>=-1&&promptPoint.z<=1&&Math.abs(promptPoint.x)<1.08&&Math.abs(promptPoint.y)<1.08;
+    if(visible)button.style.transform=`translate3d(${(promptPoint.x*.5+.5)*innerWidth}px,${(-promptPoint.y*.5+.5)*innerHeight}px,0) translate(-50%,-50%)`;
+  }
+  button.hidden=!visible;
+}
+function setInventory(open){
+  if(open&&(!state.active||state.hiddenUI))return;
+  if(open&&state.panel)setPanel(false,false);
+  state.inventory=open;$('inventory-overlay').hidden=!open;document.body.classList.toggle('inventory-open',open);
+  $('backpack-button').setAttribute('aria-expanded',open);
+  for(const child of $('hud').children)if(child.id!=='inventory-overlay')child.inert=open;
+  walker.enabled=state.active&&!open&&!state.panel;walker.resetInput();
+  if(open){walker.lookTween=null;if(document.pointerLockElement)document.exitPointerLock();$('inventory-close').focus();}
+  else $('world').focus({preventScroll:true});
+}
+
 function selectPhase(value,preset=false){
   if(state.destination==='moon'){
     const hour=sky.hourForPhase(value),delta=((hour-state.hour+36)%24)-12;
@@ -170,20 +189,23 @@ function applyDestinationUI(){
   $('aim-moon').setAttribute('aria-label',lunar?'Centrar la Tierra':'Centrar la Luna');$('aim-moon').title=lunar?'Centrar la Tierra':'Centrar la Luna';icon($('aim-moon'),lunar?'earth':'moon');
   $('phase').value=state.phase*1000;const marks=document.querySelectorAll('.time-marks span');marks.forEach((mark,i)=>mark.textContent=lunar?['0 %','25','50','75','100 %'][i]:['00','06','12','18','24'][i]);
   const preset=document.querySelectorAll('[data-hour]');preset.forEach((el,i)=>el.textContent=lunar?['Noche','Salida del Sol','Día','Puesta del Sol','Noche'][i]:['Noche','Amanecer','Día','Atardecer','Noche'][i]);
-  $('controls-help').innerHTML=mobile?'<p>Joystick izquierdo: avanzar, retroceder y dirigir.</p><p>Arrastra para mirar, también desde los botones de acción. Mantén correr para sprintar; al conducir, pulsa el rayo para el impulso.</p><p>Linterna o faros: apagados → bajas → altas. Salto y salida a la derecha.</p>':'<p><kbd>WASD</kbd> Mover / conducir · <kbd>Q E</kbd> Girar</p><p><kbd>Espacio</kbd> Saltar · <kbd>Shift</kbd> Correr / impulso</p><p><kbd>F</kbd> Linterna / faros · <kbd>R</kbd> Subir / bajar</p><p>Arrastrar: mirar · Doble clic: capturar ratón · <kbd>Esc</kbd> Liberar</p><p><kbd>T</kbd> Telescopio · <kbd>H</kbd> Ocultar interfaz</p>';
+  $('controls-help').innerHTML=mobile?'<p>Joystick izquierdo: avanzar, retroceder y dirigir.</p><p>Arrastra para mirar, también desde los botones de acción. Mantén correr para sprintar; al conducir, mantén el rayo para usar el impulso.</p><p>Linterna o faros: apagados → bajas → altas. Salto y salida a la derecha.</p>':'<p><kbd>WASD</kbd> Mover / conducir · <kbd>← →</kbd> Girar</p><p><kbd>Espacio</kbd> Saltar · <kbd>Shift</kbd> Correr / impulso</p><p><kbd>F</kbd> Linterna / faros · <kbd>E</kbd> Subir / bajar</p><p>Arrastrar: mirar · Doble clic: capturar ratón · <kbd>Esc</kbd> Liberar</p><p><kbd>B</kbd> Mochila · <kbd>1–9, 0</kbd> Casilla a mano</p><p><kbd>T</kbd> Telescopio · <kbd>H</kbd> Ocultar interfaz</p>';
   updateReadouts();
 }
 function bindUI(){
   $('moon-destination').addEventListener('click',()=>enterDestination('moon'));
   $('enter').addEventListener('click',()=>enterDestination('earth'));
-  $('home').addEventListener('click',()=>{leaveVehicle(true);state.active=false;walker.enabled=false;walker.resetInput();state.playing=false;setScope(false);setPanel(false);if(document.pointerLockElement)document.exitPointerLock();audio.pause();$('welcome').hidden=false;requestAnimationFrame(()=>$('welcome').classList.remove('leaving'));$('hud').hidden=true;$('enter').focus();});
+  $('home').addEventListener('click',()=>{if(state.inventory)setInventory(false);leaveVehicle(true);state.active=false;walker.enabled=false;walker.resetInput();state.playing=false;setScope(false);setPanel(false);if(document.pointerLockElement)document.exitPointerLock();audio.pause();$('welcome').hidden=false;requestAnimationFrame(()=>$('welcome').classList.remove('leaving'));$('hud').hidden=true;$('enter').focus();});
   document.body.classList.toggle('touch-controls',mobile);
   walker.bindActionButton($('jump-button'),()=>walker.jump());
   walker.bindActionButton($('flashlight-button'),()=>useLight());
   walker.bindActionButton($('sprint-button'),held=>{walker.sprintHeld=held;},true);
-  walker.bindActionButton($('boost-button'),()=>vehicle.requestBoost());
+  walker.bindActionButton($('boost-button'),held=>vehicle.setBoost(held),true);
+  inventory=new Inventory($('inventory-main'),$('inventory-quick'),$('hotbar'));
+  $('backpack-button').addEventListener('click',()=>setInventory(!state.inventory));$('inventory-close').addEventListener('click',()=>setInventory(false));
+  $('inventory-overlay').addEventListener('click',e=>{if(e.target===$('inventory-overlay'))setInventory(false);});
   $('vehicle-enter').addEventListener('click',enterVehicle);$('vehicle-exit').addEventListener('click',()=>leaveVehicle());
-  $('headlight-setting').addEventListener('change',e=>{vehicle.lightMode=Number(e.target.value);syncLightUI();});
+  $('headlight-setting').addEventListener('change',e=>{vehicle.lightMode=Number(e.target.value);motor.switch();syncLightUI();});
   document.querySelectorAll('[data-moon-look]').forEach(b=>b.addEventListener('click',()=>{state.moonAppearance=b.dataset.moonLook;document.querySelectorAll('[data-moon-look]').forEach(el=>el.setAttribute('aria-pressed',el===b));save();}));
  $('flashlight-setting').addEventListener('change',e=>setFlashlight(e.target.checked));
   $('settings-button').addEventListener('click',()=>setPanel(!state.panel));$('close-settings').addEventListener('click',()=>setPanel(false));
@@ -208,17 +230,30 @@ function bindUI(){
   $('scope-button').addEventListener('click',()=>setScope(!state.scope));document.querySelectorAll('[data-zoom]').forEach(b=>b.addEventListener('click',()=>setZoom(Number(b.dataset.zoom))));
   $('aim-moon').addEventListener('click',()=>{if(state.destination==='earth'&&sky.moon.y<.008){toast('La Luna está bajo el horizonte. Avanza hacia la noche.');return;}walker.aim(sky.moon);});
   $('hide-ui').addEventListener('click',()=>hideUI(true));$('show-ui').addEventListener('click',()=>hideUI(false));
-  window.addEventListener('keydown',e=>{if(!state.active||e.repeat||e.metaKey||e.ctrlKey||e.altKey)return;const tag=e.target.tagName;if(tag==='SELECT'||tag==='TEXTAREA'||e.target.isContentEditable||(tag==='INPUT'&&!['range','checkbox'].includes(e.target.type)))return;
+  window.addEventListener('keydown',e=>{if(state.inventory&&e.code==='Tab'){inventory.trapTab(e,$('inventory-close'));return;}if(!state.active||e.repeat||e.metaKey||e.ctrlKey||e.altKey)return;const tag=e.target.tagName;if(tag==='SELECT'||tag==='TEXTAREA'||e.target.isContentEditable||(tag==='INPUT'&&!['range','checkbox'].includes(e.target.type)))return;
+    if(state.inventory){
+      inventory.trapTab(e,$('inventory-close'));
+      if(e.code==='Escape'||e.code==='KeyB'){e.preventDefault();setInventory(false);}
+      else if(/^Digit[0-9]$/.test(e.code)){e.preventDefault();inventory.select((Number(e.code.slice(-1))+9)%10);}
+      return;
+    }
+    if(e.code==='KeyB'){e.preventDefault();setInventory(true);return;}
     if(e.code==='Escape'){if(state.panel)setPanel(false);else if(state.scope)setScope(false);else if(state.hiddenUI)hideUI(false);}
-    if(e.code==='KeyR'&&!state.panel){e.preventDefault();vehicle.mounted?leaveVehicle():enterVehicle();}if(e.code==='KeyF'&&!state.panel){e.preventDefault();useLight();}if(e.code==='KeyT'){e.preventDefault();setScope(!state.scope);}if(e.code==='KeyH'){e.preventDefault();hideUI(!state.hiddenUI);}if(e.code==='KeyM')$('sound-button').click();if(state.scope&&/^Digit[0-3]$/.test(e.code)){e.preventDefault();setZoom(Number(e.code.slice(-1)));}
+    if(e.code==='KeyE'&&!state.panel){e.preventDefault();vehicle.mounted?leaveVehicle():enterVehicle();}
+    if(e.code==='KeyF'&&!state.panel){e.preventDefault();useLight();}
+    if(e.code==='KeyT'&&!state.panel){e.preventDefault();setScope(!state.scope);}
+    if(e.code==='KeyH'){e.preventDefault();hideUI(!state.hiddenUI);}
+    if(e.code==='KeyM')$('sound-button').click();
+    if(tag!=='INPUT'&&/^Digit[0-9]$/.test(e.code)&&!state.panel){e.preventDefault();const key=Number(e.code.slice(-1));if(state.scope&&key<4)setZoom(key);else inventory.select((key+9)%10);}
+
   });
   // Keep sliders keyboard-operable, while mouse/touch release doesn't trap WASD.
   document.querySelectorAll('input[type=range]').forEach(input=>input.addEventListener('pointerup',()=>input.blur()));
   document.addEventListener('pointerdown',e=>{if(state.panel&&!$('settings').contains(e.target)&&!$('settings-button').contains(e.target))setPanel(false,false);});
   updateReadouts();
 }
-function setPanel(open,focus=true){state.panel=open;showSurface($('settings'),open);$('settings-button').setAttribute('aria-expanded',open);document.body.classList.toggle('panel-open',open);walker.enabled=state.active&&!open;walker.resetInput();if(open){if(document.pointerLockElement)document.exitPointerLock();if(focus)$('close-settings').focus();}else if(focus)$('settings-button').focus();}
-function hideUI(hidden){state.hiddenUI=hidden;if(hidden)setPanel(false,false);document.body.classList.toggle('ui-hidden',hidden);$('hud').inert=hidden;$('show-ui').hidden=!hidden;if(hidden)$('show-ui').focus();else $('world').focus({preventScroll:true});}
+function setPanel(open,focus=true){if(open&&state.inventory)setInventory(false);state.panel=open;showSurface($('settings'),open);$('settings-button').setAttribute('aria-expanded',open);document.body.classList.toggle('panel-open',open);walker.enabled=state.active&&!open&&!state.inventory;walker.resetInput();if(open){if(document.pointerLockElement)document.exitPointerLock();if(focus)$('close-settings').focus();}else if(focus)$('settings-button').focus();}
+function hideUI(hidden){state.hiddenUI=hidden;if(hidden){if(state.inventory)setInventory(false);setPanel(false,false);}document.body.classList.toggle('ui-hidden',hidden);$('hud').inert=hidden;$('show-ui').hidden=!hidden;if(hidden)$('show-ui').focus();else $('world').focus({preventScroll:true});}
 function setScope(on){state.scope=on;document.body.classList.toggle('using-scope',on);$('lens').classList.toggle('active',on);showSurface($('scope-controls'),on);$('scope-button').setAttribute('aria-pressed',on);$('scope-button').setAttribute('aria-label',on?'Guardar telescopio':'Usar telescopio');$('scope-label').textContent=on?'Guardar':'Telescopio';$('fov').disabled=on;$('fov-note').textContent=on?'Guarda el telescopio para cambiar el campo de visión.':'Se ajusta con el telescopio guardado.';if(on)walker.resetInput();}
 function setZoom(level){state.zoom=level;document.querySelectorAll('[data-zoom]').forEach(b=>b.setAttribute('aria-pressed',Number(b.dataset.zoom)===level));}
 function syncPreferences(){document.querySelectorAll('[data-moon-look]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.moonLook===state.moonAppearance));for(const id of ['fov','speed','duration','quality'])$(id).value=state[id];$('volume').value=Math.round(state.volume*100);$('milky').checked=state.milky;$('sway').checked=state.sway;$('fov-value').textContent=state.fov+'°';$('speed-value').textContent=state.speed.toFixed(1)+'×';$('volume-value').textContent=Math.round(state.volume*100)+' %';$('duration-value').textContent=state.duration+' min';if(mobile)$('device-hint').textContent='Joystick para caminar · Arrastra para mirar';}
@@ -248,9 +283,9 @@ function frame(now){
   const reveal=state.scope?state.zoom/3:0;state.zoomReveal+=(reveal-state.zoomReveal)*(1-Math.exp(-dt*5));
   const desired=targetFov();if(camera.fov!==desired){camera.fov=Math.exp(Math.log(camera.fov)+(Math.log(desired)-Math.log(camera.fov))*(1-Math.exp(-dt*(reduced?20:5))));if(Math.abs(camera.fov-desired)<.0001)camera.fov=desired;camera.updateProjectionMatrix();}
   walker.sensitivity=state.scope?Math.max(.008,Math.tan(camera.fov*Math.PI/360)/Math.tan(state.fov*Math.PI/360)):1;walker.update(dt);
-  if(!vehicle.mounted){vehicle.integrate(dt,0,0,state.active&&!state.panel);vehicle.collideWalker(walker);}
+  if(!vehicle.mounted){vehicle.integrate(dt,0,0,state.active&&!state.panel&&!state.inventory);vehicle.collideWalker(walker);}
   vehicle.updateLighting(dt);state.headlightExposure=vehicle.exposure(camera);
-  sky.update(camera,state,elapsed,pixelRatio());terrain.update(camera,sky,elapsed,state);vehicle.updateAppearance(sky,camera,state,dt);audio.update(elapsed,sky.night,state.hour);renderer.render(scene,camera);
+  sky.update(camera,state,elapsed,pixelRatio());terrain.update(camera,sky,elapsed,state);vehicle.updateAppearance(sky,camera,state,dt);audio.update(elapsed,sky.night,state.hour);motor.update(vehicle);updateVehiclePrompt();renderer.render(scene,camera);
   uiTime+=dt;if(uiTime>.12){uiTime=0;updateReadouts();updateVehicleUI();}
   // Reduce only pixel density under sustained pressure. Sky layers, lunar map,
   // star catalogue and grass geometry remain intact; never degrade from one spike.

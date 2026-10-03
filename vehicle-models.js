@@ -1,5 +1,5 @@
 import * as THREE from './three.module.js';
-import {flashlightGLSL,vehicleLightGLSL,vehicleLightUniforms,updateVehicleLightUniforms} from './flashlight.js?v=2.2';
+import {flashlightGLSL,vehicleLightGLSL,vehicleLightUniforms,updateVehicleLightUniforms} from './flashlight.js?v=2.3';
 
 // Original, locally authored geometry. Static details are merged into one draw;
 // only the four wheels and the steering assembly need separate transforms.
@@ -46,6 +46,7 @@ function vehicleMaterial(){
       float spec=pow(max(0.,dot(n,normalize(sun+view))),40.)*ndl*sunVisibility*mix(day,1.,lunar);
       vec3 color=vPaint*light+vec3(spec*.07);
       if(vEmission>0.)color+=vPaint*vEmission*min(lampMode,1.)*2.4;
+      if(vEmission<0.)color+=vec3(1.,.012,.003)*(-vEmission)*reverseLight*2.8;
       gl_FragColor=vec4(pow(max(color,vec3(0.)),vec3(1./2.2)),1.);
     }`});
 }
@@ -97,12 +98,35 @@ export function createVehicleModel(lunar){
     for(let i=0;i<7;i++)p.box([.51,.011,.14],[.20,.82+i*.03,1.09],paint.metal);
     p.tube([.65,.3,.99],[.65,1.94,.99],.022,paint.frame);
     p.add(new THREE.SphereGeometry(.052,10,6),paint.ivory,V(.65,1.94,.99));
-    // Parabolic communications dish, tilted towards the sky. Low, on the right.
-    p.tube([.67,.25,-.88],[.67,1.47,-.88],.025,paint.frame);
-    const dish=new THREE.SphereGeometry(.29,20,8,0,TAU,0,.9);dish.rotateX(-Math.PI/2);dish.scale(1,1,.4);dish.rotateX(-.4);
-    p.add(dish,paint.ivory,V(.67,1.44,-.88));
-    for(let i=0;i<6;i++){const a=i*TAU/6;p.tube([.67,1.44,-1.03],[.67+Math.cos(a)*.225,1.44+Math.sin(a)*.225,-.92],.008,paint.gold);}
-    p.tube([.67,1.44,-1.03],[.67,1.44,-1.21],.014,paint.frame);
+    // Closed, two-sided paraboloid. Front, backing, lip and feed share a
+    // single local axis, so the reflector remains solid from every angle.
+    const dishOrigin=V(.67,1.45,-.88),dishQ=new THREE.Quaternion().setFromUnitVectors(V(0,0,1),V(0,.35,-.937).normalize());
+    const dishParts=new Parts();
+    p.tube([.67,.25,-.88],[.67,1.40,-.84],.026,paint.frame);
+    const positions=[],indices=[],rings=7,segments=32,radius=.30;
+    for(let side=0;side<2;side++)for(let j=0;j<=rings;j++)for(let i=0;i<=segments;i++){
+      const r=radius*j/rings,a=i*TAU/segments;positions.push(r*Math.cos(a),r*Math.sin(a),r*r*.83-side*.016);
+    }
+    const half=(rings+1)*(segments+1);
+    for(let side=0;side<2;side++)for(let j=0;j<rings;j++)for(let i=0;i<segments;i++){
+      const a=side*half+j*(segments+1)+i,b=a+1,c=a+segments+1,d=c+1;
+      if(side===0)indices.push(a,c,b,b,c,d);else indices.push(a,b,c,b,d,c);
+    }
+    for(let i=0;i<segments;i++){const a=rings*(segments+1)+i,b=a+1;indices.push(a,b,a+half,b,b+half,a+half);}
+    const dish=new THREE.BufferGeometry();dish.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));dish.setIndex(indices);dish.computeVertexNormals();
+    dishParts.add(dish,paint.ivory);dishParts.torus(radius,.012,[0,0,radius*radius*.83],paint.gold);
+    dishParts.cylinder(.052,.052,.085,[0,0,-.044],paint.frame,[Math.PI/2,0,0]);
+    for(let i=0;i<6;i++){
+      const a=i*TAU/6;
+      for(let j=0;j<5;j++){const r1=.03+j*.053,r2=r1+.053;dishParts.tube([Math.cos(a)*r1,Math.sin(a)*r1,r1*r1*.83-.022],[Math.cos(a)*r2,Math.sin(a)*r2,r2*r2*.83-.022],.006,paint.gold);}
+    }
+    for(let i=0;i<3;i++){const a=i*TAU/3;dishParts.tube([Math.cos(a)*.26,Math.sin(a)*.26,.06],[0,0,.235],.006,paint.frame);}
+    dishParts.cylinder(.025,.021,.065,[0,0,.23],paint.gold,[Math.PI/2,0,0]);
+    const assembly=dishParts.mesh(material);p.add(assembly.geometry,paint.ivory);
+    // Restore the assembly's authored paint attributes after positioning.
+    const start=p.p.length-dishParts.p.length;
+    const point=V(0,0,0),normal=V(0,0,0);
+    for(let i=0;i<dishParts.p.length;i+=3){point.fromArray(dishParts.p,i).applyQuaternion(dishQ).add(dishOrigin);normal.fromArray(dishParts.n,i).applyQuaternion(dishQ);p.p[start+i]=point.x;p.p[start+i+1]=point.y;p.p[start+i+2]=point.z;p.n[start+i]=normal.x;p.n[start+i+1]=normal.y;p.n[start+i+2]=normal.z;p.c[start+i]=dishParts.c[i];p.c[start+i+1]=dishParts.c[i+1];p.c[start+i+2]=dishParts.c[i+2];}
     // Sill label stripes and fasteners are geometry, with no external textures.
     for(const x of [-.79,.79])for(let i=0;i<4;i++)p.box([.012,.052,.14],[x,.20,-.48+i*.19],i<2?paint.red:paint.frame);
   }else{
@@ -148,7 +172,7 @@ export function createVehicleModel(lunar){
   for(const side of [-1,1]){
     p.box([.25,.18,.14],[side*headX,headY,front+.03],paint.dark);
     p.box([.19,.115,.012],[side*headX,headY,front-.047],0xe1e9e4,[0,0,0],1);
-    p.box([.15,.055,.015],[side*headX,headY-.17,lunar?1.40:1.11],paint.red,[0,0,0],.25);
+    p.box([.15,.055,.015],[side*headX,headY-.17,lunar?1.40:1.11],paint.red,[0,0,0],-1);
   }
   const body=p.mesh(material);root.add(body);
   const wheels=[];
@@ -163,6 +187,7 @@ export function createVehicleModel(lunar){
   return {root,body,wheels,steering,material,wheelbase,track,radius,
     seat:V(lunar?-.39:0,lunar?1.55:1.56,lunar?.035:.26),
     lamps:[V(-headX,headY,front-.075),V(headX,headY,front-.075)],
+    rearLamp:V(0,headY-.17,lunar?1.43:1.14),
     updateLight(sky,camera,state,sunVisibility=1){const u=material.uniforms;u.sun.value.copy(sky.sun);u.earth.value.copy(sky.moon);u.day.value=sky.day;u.earthPower.value=lunar?sky.earthshine:sky.moonlight*.18;u.eye.value.copy(camera.position);camera.getWorldDirection(u.forward.value);u.torch.value=state.flashlight?1:0;u.sunVisibility.value=sunVisibility;updateVehicleLightUniforms(u,state.vehicleLighting);}
   };
 }

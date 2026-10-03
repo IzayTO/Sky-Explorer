@@ -18,7 +18,10 @@ float flashlightBeam(vec3 fromLamp,vec3 direction){
 // mode interpolates between off (0), dipped (1) and main beam (2).
 export const vehicleLightGLSL=`
 uniform vec3 lampLeft,lampRight,lampDirection,vehicleCenter,vehicleSize;
-uniform float lampMode,vehicleHeading;
+uniform float lampMode,vehicleHeading,reverseLight;
+uniform vec3 rearLamp,rearDirection;
+uniform mat4 vehicleInverse;
+uniform vec4 wheelShape,wheelOffsets;
 float headlightBeam(vec3 delta){
   if(lampMode<.001)return 0.;
   float len=length(delta),aim=dot(delta/max(len,.001),lampDirection);
@@ -30,26 +33,48 @@ float headlightBeam(vec3 delta){
   return (cone+spill)*(1.-smoothstep(range*.72,range,len))
     *mix(3.3,5.8,high)/(1.+len*len/mix(200.,580.,high))*min(lampMode,1.);
 }
-// A compact chassis volume casts a stable ground shadow. Terrain occlusion
-// remains the existing height-field ray query; no large shadow-map pass.
+float rearBeam(vec3 p){
+  if(reverseLight<.001)return 0.;
+  vec3 delta=p-rearLamp;float len=length(delta);
+  if(len>13.)return 0.;
+  float aim=dot(delta/max(len,.001),rearDirection);
+  return smoothstep(.30,.83,aim)*(1.-smoothstep(8.,13.,len))*reverseLight*2.4/(1.+len*len*.28);
+}
+float boxHit(vec3 o,vec3 inv,vec3 center,vec3 size){
+  vec3 a=(center-size-o)*inv,b=(center+size-o)*inv;
+  vec3 lo=min(a,b),hi=max(a,b);
+  return step(max(max(max(lo.x,lo.y),lo.z),.002),min(min(hi.x,hi.y),hi.z));
+}
+float wheelHit(vec3 o,vec3 d,vec3 center){
+  vec3 radii=vec3(wheelShape.w,wheelShape.z,wheelShape.z);
+  vec3 q=(o-center)/radii,v=d/radii;
+  float a=dot(v,v),b=dot(q,v),c=dot(q,q)-1.,h=b*b-a*c;
+  return h>=0.&&(-b+sqrt(max(0.,h)))/a>.002?1.:0.;
+}
+// Physical local-space chassis + four contact volumes. The ray starts at the
+// surface, not the raised terrain-shadow sample: that bias detached long shadows.
 float vehicleOcclusion(vec3 p,vec3 light){
   if(vehicleSize.x<.01||light.y<=0.)return 1.;
-  float c=cos(vehicleHeading),s=sin(vehicleHeading);
-  vec3 o=p-vehicleCenter; o.xz=mat2(c,-s,s,c)*o.xz;
-  vec3 d=light;d.xz=mat2(c,-s,s,c)*d.xz;
-  vec3 inv=sign(d+vec3(.000001))/max(abs(d),vec3(.00001));
-  vec3 a=(-vehicleSize-o)*inv,b=(vehicleSize-o)*inv;
-  vec3 lo=min(a,b),hi=max(a,b);
-  float enter=max(max(lo.x,lo.y),lo.z),leave=min(min(hi.x,hi.y),hi.z);
-  return leave>max(enter,.06)?.06:1.;
+  vec3 relative=vehicleCenter-p;float along=max(0.,dot(relative,light));
+  if(dot(relative-light*along,relative-light*along)>9.)return 1.;
+  vec3 o=(vehicleInverse*vec4(p,1.)).xyz,d=mat3(vehicleInverse)*light;
+  vec3 inv=sign(d+vec3(.000001))/max(abs(d),vec3(.000001));
+  float hit=boxHit(o,inv,vec3(0.,.20,0.),vec3(vehicleSize.x,.19,vehicleSize.z));
+  hit=max(hit,boxHit(o,inv,vec3(0.,.73,.20),vec3(vehicleSize.x*.82,.41,.38)));
+  hit=max(hit,wheelHit(o,d,vec3(-wheelShape.x,wheelOffsets.x,-wheelShape.y)));
+  hit=max(hit,wheelHit(o,d,vec3(-wheelShape.x,wheelOffsets.y,wheelShape.y)));
+  hit=max(hit,wheelHit(o,d,vec3(wheelShape.x,wheelOffsets.z,-wheelShape.y)));
+  hit=max(hit,wheelHit(o,d,vec3(wheelShape.x,wheelOffsets.w,wheelShape.y)));
+  return mix(1.,.06,hit);
 }`;
 export function vehicleLightUniforms(){return {
   lampLeft:{value:new THREE.Vector3()},lampRight:{value:new THREE.Vector3()},lampDirection:{value:new THREE.Vector3(0,0,-1)},lampMode:{value:0},
-  vehicleCenter:{value:new THREE.Vector3()},vehicleSize:{value:new THREE.Vector3()},vehicleHeading:{value:0}
+  vehicleCenter:{value:new THREE.Vector3()},vehicleSize:{value:new THREE.Vector3()},vehicleHeading:{value:0},vehicleInverse:{value:new THREE.Matrix4()},wheelShape:{value:new THREE.Vector4()},wheelOffsets:{value:new THREE.Vector4()},
+  rearLamp:{value:new THREE.Vector3()},rearDirection:{value:new THREE.Vector3(0,0,1)},reverseLight:{value:0}
 };}
 export function updateVehicleLightUniforms(u,lighting){
-  u.lampMode.value=lighting?.level||0;
+  u.lampMode.value=lighting?.level||0;u.reverseLight.value=lighting?.reverse||0;
   if(!lighting){u.vehicleSize.value.set(0,0,0);return;}
   u.lampLeft.value.copy(lighting.left);u.lampRight.value.copy(lighting.right);u.lampDirection.value.copy(lighting.direction);
-  u.vehicleCenter.value.copy(lighting.center);u.vehicleSize.value.copy(lighting.size);u.vehicleHeading.value=lighting.heading;
+  u.vehicleCenter.value.copy(lighting.center);u.vehicleSize.value.copy(lighting.size);u.vehicleHeading.value=lighting.heading;u.vehicleInverse.value.copy(lighting.inverse);u.wheelShape.value.copy(lighting.wheelShape);u.wheelOffsets.value.copy(lighting.wheelOffsets);u.rearLamp.value.copy(lighting.rear);u.rearDirection.value.copy(lighting.rearDirection);
 }

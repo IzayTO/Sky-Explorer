@@ -1,6 +1,6 @@
 import * as THREE from './three.module.js';
-import {clamp} from './sky.js?v=2.2';
-import {flashlightGLSL,vehicleLightGLSL,vehicleLightUniforms,updateVehicleLightUniforms} from './flashlight.js?v=2.2';
+import {clamp} from './sky.js?v=2.3';
+import {flashlightGLSL,vehicleLightGLSL,vehicleLightUniforms,updateVehicleLightUniforms} from './flashlight.js?v=2.3';
 
 // One continuous height field drives both the drawn surface and foot collision.
 // Directional and torch occlusion sample that same field: no fake shadow decals.
@@ -35,16 +35,27 @@ export class LunarTerrain{
         n=normalize(n-bump*.037*(1.-smoothstep(25.,110.,distanceToEye)));
         vec3 safePoint=p+normalize(vNormal)*.24;
         float solar=max(0.,dot(n,sun)),earthLit=max(0.,dot(n,earth));
-        float s=0.,e=0.;if(solar>.001&&sun.y>-.01)s=solar*shadow(safePoint,sun)*vehicleOcclusion(safePoint,sun);
-        if(earthPower>.0001&&earthLit>.001)e=earthLit*shadow(safePoint,earth)*earthPower*vehicleOcclusion(safePoint,earth);
+        float s=0.,e=0.;if(solar>.001&&sun.y>-.01)s=solar*shadow(safePoint,sun)*vehicleOcclusion(p+normalize(vNormal)*.004,sun);
+        if(earthPower>.0001&&earthLit>.001)e=earthLit*shadow(safePoint,earth)*earthPower*vehicleOcclusion(p+normalize(vNormal)*.004,earth);
         vec3 illumination=vec3(.000025)+vec3(1.,.98,.93)*s*1.38+vec3(.46,.63,1.)*e;
         if(torch>.001){float beam=flashlightBeam(p-eye,forward)*torch;
           if(beam>.001){vec3 delta=eye-p;float len=length(delta);vec3 toLamp=delta/max(len,.001);float occlusion=torchShadow(safePoint,toLamp,len);illumination+=vec3(.92,.96,1.)*(.12+.88*max(dot(n,toLamp),0.))*occlusion*beam;}}
         if(lampMode>.001){
           float beamL=headlightBeam(p-lampLeft),beamR=headlightBeam(p-lampRight);
-          if(beamL>.001){vec3 delta=lampLeft-p;float len=length(delta);vec3 l=delta/max(len,.001);illumination+=vec3(.92,.96,1.)*(.12+.88*max(dot(n,l),0.))*beamL*torchShadow(safePoint,l,len);}
-          if(beamR>.001){vec3 delta=lampRight-p;float len=length(delta);vec3 l=delta/max(len,.001);illumination+=vec3(.92,.96,1.)*(.12+.88*max(dot(n,l),0.))*beamR*torchShadow(safePoint,l,len);}
+          if(max(beamL,beamR)>.001){
+            vec3 deltaL=lampLeft-p,deltaR=lampRight-p;float lenL=length(deltaL),lenR=length(deltaR);
+            vec3 l=deltaL/max(lenL,.001),r=deltaR/max(lenR,.001);
+            // Beyond 18 metres the two lamps subtend less than 4 degrees.
+            // Share their terrain visibility there; keep both beams, incidence
+            // and individual near-field occlusion at full resolution.
+            float shadowL=1.,shadowR=1.;
+            if(min(lenL,lenR)>18.){vec3 mid=(lampLeft+lampRight)*.5-p;float len=length(mid);shadowL=torchShadow(safePoint,mid/len,len);shadowR=shadowL;}
+            else{if(beamL>.001)shadowL=torchShadow(safePoint,l,lenL);if(beamR>.001)shadowR=torchShadow(safePoint,r,lenR);}
+            illumination+=vec3(.92,.96,1.)*((.12+.88*max(dot(n,l),0.))*beamL*shadowL+(.12+.88*max(dot(n,r),0.))*beamR*shadowR);
+          }
         }
+        float red=rearBeam(p);if(red>.001){vec3 d=rearLamp-p;float len=length(d);vec3 l=d/max(len,.001);illumination+=vec3(1.,.009,.002)*red*(.15+.85*max(dot(n,l),0.))*torchShadow(safePoint,l,len);}
+
         float albedo=.28+(mottling-.5)*.16+(grains-.5)*.12;
         vec3 linear=vec3(albedo*.99,albedo,albedo*1.015)*illumination;
         vec3 color=pow(max(linear,vec3(0.)),vec3(1./2.2));

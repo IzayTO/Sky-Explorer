@@ -7,7 +7,7 @@
   <meta name="description" content="Dos horizontes, el paso de la luz y todo un cielo por descubrir. Una experiencia personal de exploración.">
   <title>A cielo abierto</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23111f25'/%3E%3Cpath d='M12 43h40M18 35a14 14 0 0128 0' fill='none' stroke='%23dec8a2' stroke-width='3'/%3E%3Ccircle cx='43' cy='17' r='2' fill='%23fff3dc'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="./styles.css?v=2.2">
+  <link rel="stylesheet" href="./styles.css?v=2.3">
 </head>
 <body>
   <main id="world" tabindex="-1" aria-label="Paisaje interactivo en primera persona"></main>
@@ -39,7 +39,7 @@
         <button id="settings-button" class="icon-button glass" aria-label="Abrir ajustes" aria-expanded="false" aria-controls="settings" data-icon="sliders"></button>
       </div>
     </header>
-    <div class="compass" aria-label="Orientación"><span id="bearing">O</span><span class="compass-tick"></span><span id="degrees">270°</span></div>
+
     <div class="moment"><span id="moment-name">Luz de la tarde</span><span class="moment-line"></span><time id="clock">17:48</time></div>
 
     <aside id="settings" class="panel glass" aria-labelledby="settings-title" hidden>
@@ -63,7 +63,7 @@
         <div class="field compact"><label class="field-label" for="quality">Detalle visual</label><select id="quality"><option value="auto">Automático</option><option value="high">Alto</option><option value="balanced">Equilibrado</option></select></div>
         <div id="lunar-flash-setting" class="toggle-row" hidden><label for="flashlight-setting">Linterna</label><input id="flashlight-setting" class="switch" type="checkbox"></div><div class="field compact" id="headlight-setting-row" hidden><label class="field-label" for="headlight-setting">Faros del vehículo</label><select id="headlight-setting"><option value="0">Apagados</option><option value="1">Luces bajas</option><option value="2">Luces altas</option></select></div><p id="gravity-note" class="panel-note">Espacio o el botón de salto para saltar.</p>
         <button id="reset-position" class="text-button">Volver al punto de inicio</button>
-        <div class="controls-help" id="controls-help"><p><kbd>W A S D</kbd> Caminar · <kbd>Q E</kbd> Girar · <kbd>Espacio</kbd> Saltar</p><p>Arrastrar: mirar · <kbd>T</kbd> Telescopio · <kbd>H</kbd> Ocultar</p><p><kbd>Esc</kbd> Cerrar · Doble clic: mirada con ratón · Esc: liberar</p></div>
+        <div class="controls-help" id="controls-help"><p><kbd>W A S D</kbd> Caminar · <kbd>← →</kbd> Girar · <kbd>Espacio</kbd> Saltar</p><p>Arrastrar: mirar · <kbd>T</kbd> Telescopio · <kbd>H</kbd> Ocultar</p><p><kbd>Esc</kbd> Cerrar · Doble clic: mirada con ratón · Esc: liberar</p></div>
       </div>
     </aside>
 
@@ -71,25 +71,39 @@
     <div class="movement-actions" aria-label="Acciones de exploración">
       <button id="flashlight-button" class="icon-button glass" aria-label="Encender linterna" aria-pressed="false" data-icon="flashlight" title="Linterna · F"></button>
       <button id="sprint-button" class="icon-button glass" aria-label="Mantener para correr" data-icon="sprint" title="Mantener para correr · Shift"></button>
-      <button id="boost-button" class="icon-button glass" aria-label="Impulso de 2,5 segundos" data-icon="boost" title="Impulso · Shift" hidden><span></span></button>
+      <button id="boost-button" class="icon-button glass" aria-label="Mantener para usar impulso" data-icon="boost" title="Mantener impulso · Shift" hidden><span></span></button>
       <button id="jump-button" class="icon-button glass" aria-label="Saltar" data-icon="jump" title="Saltar · Espacio"></button>
-      <button id="vehicle-exit" class="icon-button glass" aria-label="Bajar del vehículo" data-icon="exit" title="Bajar · R" hidden></button>
+      <button id="vehicle-exit" class="icon-button glass" aria-label="Bajar del vehículo" data-icon="exit" title="Bajar · E" hidden></button>
     </div>
-    <button id="vehicle-enter" class="vehicle-enter glass" aria-label="Sentarse al volante" title="Sentarse · R" hidden><span data-icon="seat"></span><span class="enter-caption">Sentarse <kbd>R</kbd></span></button>
-    <div id="vehicle-status" class="vehicle-status glass" hidden><span id="vehicle-name"></span><span id="vehicle-speed">0 km/h</span><span id="vehicle-lights">Faros apagados</span><span id="boost-status">Impulso listo</span><small class="drive-keys">WASD · Espacio · Shift · F · R</small></div>
+    <button id="vehicle-enter" class="vehicle-enter glass" aria-label="Sentarse al volante" title="Sentarse · E" hidden><span data-icon="seat"></span><span class="enter-caption">Sentarse <kbd>E</kbd></span></button>
+    <div id="vehicle-status" class="vehicle-status glass" hidden><span id="vehicle-name"></span><span id="vehicle-speed">0 km/h</span><span id="vehicle-lights">Faros apagados</span><span id="boost-status">Impulso listo</span><small class="drive-keys">WASD · Espacio · Shift · F · E</small></div>
+    <button id="backpack-button" class="icon-button glass" aria-label="Abrir mochila" aria-controls="inventory-overlay" aria-expanded="false" title="Mochila · B" data-icon="backpack"></button>
+    <nav id="hotbar" aria-label="Diez casillas de acceso rápido"></nav>
+    <div id="inventory-overlay" hidden>
+      <section class="inventory-panel glass" role="dialog" aria-modal="true" aria-labelledby="inventory-title" aria-describedby="inventory-note">
+        <header class="inventory-heading"><span class="inventory-emblem" data-icon="backpack"></span><div><p class="eyebrow">LO QUE LLEVAS CONTIGO</p><h2 id="inventory-title">Tu mochila</h2></div><button id="inventory-close" class="icon-button" aria-label="Cerrar mochila" data-icon="close"></button></header>
+        <div class="inventory-label"><span>Inventario</span><span>30 espacios</span></div>
+        <div id="inventory-main" class="inventory-grid" role="group" aria-label="Inventario principal, 30 espacios vacíos"></div>
+        <div class="inventory-quick-section"><div class="inventory-label"><span>A mano</span><span>10 espacios</span></div><div id="inventory-quick" class="inventory-grid" role="group" aria-label="Acceso rápido, 10 espacios vacíos"></div></div>
+        <p id="inventory-note">Tu mochila está vacía. Elige una casilla de acceso rápido para dejarla seleccionada.</p>
+      </section>
+    </div>
     <div id="look-hint">Arrastra para mirar</div>
     <div class="scope-actions">
       <div id="scope-controls" class="glass" hidden><button id="aim-moon" aria-label="Centrar la Luna" title="Centrar la Luna" data-icon="moon"></button><span class="scope-divider"></span><div id="zoom-levels" aria-label="Aumento del telescopio"><button data-zoom="0" aria-pressed="true">0×</button><button data-zoom="1" aria-pressed="false">1×</button><button data-zoom="2" aria-pressed="false">2×</button><button data-zoom="3" aria-pressed="false">3×</button></div></div>
       <button id="scope-button" class="scope-button glass" aria-label="Usar telescopio" aria-pressed="false"><span data-icon="scope"></span><span id="scope-label">Telescopio</span></button>
     </div>
+    <div class="celestial-panel">
     <footer id="timeline" class="timeline glass">
       <div class="timeline-top"><button id="play" class="play-button" aria-label="Reproducir ciclo" aria-pressed="false" data-icon="play"></button><div><span class="timeline-title">El paso de la luz</span><span id="timeline-status">El tiempo está en tus manos</span></div><button id="cycle-direction" class="icon-button" aria-label="Invertir dirección del tiempo" title="Invertir dirección del tiempo" data-icon="forward"></button><button id="timeline-toggle" class="icon-button" aria-label="Plegar ciclo" aria-expanded="true" data-icon="chevron"></button></div>
       <div class="timeline-body"><div class="timeline-body-inner"><div class="timeline-presets"><button data-hour="0">Noche</button><button data-hour="6">Amanecer</button><button data-hour="12">Día</button><button data-hour="18">Atardecer</button><button data-hour="23.99" aria-label="Noche al final del ciclo">Noche</button></div><input id="time" class="time-range" aria-label="Ciclo completo de día y noche" type="range" min="0" max="24" step="0.005" value="17.8"><div class="time-marks" aria-hidden="true"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></div></div></div>
     </footer>
+    <div class="compass" aria-label="Orientación"><span id="bearing">O</span><span class="compass-tick"></span><span id="degrees">270°</span></div>
+    </div>
   </div>
   <button id="show-ui" class="icon-button glass" aria-label="Mostrar controles" hidden data-icon="eye"></button>
   <div id="toast" role="status" aria-live="polite"></div>
   <noscript>Activa JavaScript en tu navegador para explorar el paisaje.</noscript>
-  <script type="module" src="./app.js?v=2.2"></script>
+  <script type="module" src="./app.js?v=2.3"></script>
 </body>
 </html>

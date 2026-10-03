@@ -1,5 +1,5 @@
 import * as THREE from './three.module.js';
-import {flashlightGLSL,vehicleLightGLSL,vehicleLightUniforms,updateVehicleLightUniforms} from './flashlight.js?v=2.2';
+import {flashlightGLSL,vehicleLightGLSL,vehicleLightUniforms,updateVehicleLightUniforms} from './flashlight.js?v=2.3';
 // Continuous flat ground, with nearby instanced grass. The shader shades distant
 // detail analytically: no tiling photograph, loaded model, shadow atlas or edge.
 const common=`
@@ -17,11 +17,11 @@ vec3 illumination(vec3 base,float occlusion){
   return lit;
 }
 vec3 torchLight(vec3 lit,vec3 base,vec3 pos,float occlusion){
-  lit*=mix(1.,vehicleOcclusion(pos+vec3(0.,.05,0.),sunDirection),daylight*.82);
+  lit*=mix(1.,vehicleOcclusion(pos+vec3(0.,.004,0.),sunDirection),daylight*.82);
   float beam=0.;
   if(torch>.001)beam=flashlightBeam(pos-eye,forward)*torch*(.12+.88*max(normalize(eye-pos).y,0.));
   if(lampMode>.001){beam+=headlightBeam(pos-lampLeft)*(.13+.87*max(normalize(lampLeft-pos).y,0.));beam+=headlightBeam(pos-lampRight)*(.13+.87*max(normalize(lampRight-pos).y,0.));}
-  return sqrt(lit*lit+base*vec3(.92,.96,1.)*beam*occlusion*.48);
+  return sqrt(lit*lit+base*(vec3(.92,.96,1.)*beam+vec3(1.,.009,.002)*rearBeam(pos))*occlusion*.48);
 }
 vec3 groundHaze(vec3 c,vec3 pos){float d=length(pos.xz-eye.xz);float haze=1.-exp(-d*.0019);float toward=dot(normalize(pos.xz-eye.xz),normalize(sunDirection.xz+vec2(.0001)))*.5+.5;
   vec3 fog=mix(vec3(.031,.041,.053),vec3(.57,.67,.64),daylight);
@@ -84,15 +84,23 @@ export class Terrain{
   }
   createGrass(scene,count){
     let seed=74219;const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
-    const geo=new THREE.InstancedBufferGeometry();
-    // Each blade has a broad base and a tapered, bending tip (three triangles).
-    geo.setAttribute('position',new THREE.Float32BufferAttribute([-.5,0,0,.5,0,0,-.24,.57,0,.24,.57,0,0,1,0],3));geo.setIndex([0,1,2,1,3,2,2,3,4]);
-    const offsets=[],shapes=[];
-    for(let i=0;i<count;i++){offsets.push(rand()*36-18,rand()*36-18);shapes.push(.018+rand()*.037,.16+Math.pow(rand(),1.4)*.32,rand()*Math.PI*2,rand());}
-    geo.setAttribute('offset',new THREE.InstancedBufferAttribute(new Float32Array(offsets),2));geo.setAttribute('shape',new THREE.InstancedBufferAttribute(new Float32Array(shapes),4));geo.instanceCount=count;
+    // Preserve every blade and its 36 m periodic world position. Partition the
+    // same instances into 6 m cells; 49 reusable placements cover the full 18 m
+    // visibility radius even while crossing cell boundaries at boost speed.
+    const cells=Array.from({length:36},()=>({offsets:[],shapes:[]}));
+    for(let i=0;i<count;i++){
+      const x=rand()*36-18,z=rand()*36-18,cx=Math.floor((x+18)/6),cz=Math.floor((z+18)/6),cell=cells[cz*6+cx];
+      cell.offsets.push(x-(-18+cx*6),z-(-18+cz*6));cell.shapes.push(.018+rand()*.037,.16+Math.pow(rand(),1.4)*.32,rand()*Math.PI*2,rand());
+    }
+    this.grassCells=cells.map(cell=>{
+      const geo=new THREE.InstancedBufferGeometry();
+      geo.setAttribute('position',new THREE.Float32BufferAttribute([-.5,0,0,.5,0,0,-.24,.57,0,.24,.57,0,0,1,0],3));geo.setIndex([0,1,2,1,3,2,2,3,4]);
+      geo.setAttribute('offset',new THREE.InstancedBufferAttribute(new Float32Array(cell.offsets),2));geo.setAttribute('shape',new THREE.InstancedBufferAttribute(new Float32Array(cell.shapes),4));geo.instanceCount=cell.shapes.length/4;
+      geo.boundingBox=new THREE.Box3(new THREE.Vector3(-.15,-.03,-.15),new THREE.Vector3(6.15,.60,6.15));geo.boundingSphere=new THREE.Sphere(new THREE.Vector3(3,.28,3),4.48);return geo;
+    });
     const mat=new THREE.ShaderMaterial({uniforms:this.u,side:THREE.DoubleSide,toneMapped:false,vertexShader:`
       attribute vec2 offset;attribute vec4 shape;uniform vec2 grassOrigin;uniform vec3 eye;uniform float clockTime;varying vec3 vWorld;varying float vHeight,vSeed;
-      void main(){vec2 origin=floor(eye.xz/4.)*4.;vec2 xz=mod(offset-origin+18.,36.)-18.+origin;
+      void main(){vec2 xz=(modelMatrix*vec4(offset.x,0.,offset.y,1.)).xz;
         float distance=length(xz-eye.xz);float fade=1.-smoothstep(12.,18.,distance);
         vec3 p=position;float h=p.y;float sway=sin(clockTime*.75+xz.x*.13+xz.y*.21)*.045+sin(clockTime*1.8+xz.y*.39)*.012;
         p.x*=shape.x;p.y*=shape.y*fade;p.z=(h*h)*(.06+sway)*fade;
@@ -106,7 +114,21 @@ export class Terrain{
         float backLight=max(0.,dot(normalize(vWorld-eye),sunDirection));col+=base*twilight*pow(backLight,5.)*vHeight*.17;
         gl_FragColor=vec4(groundHaze(col,vWorld),1.);
       }`});
-    this.grass=new THREE.Mesh(geo,mat);this.grass.frustumCulled=false;scene.add(this.grass);this.maxBlades=count;
+    this.grass=new THREE.Group();this.grass.name='Césped por sectores';scene.add(this.grass);this.grassTiles=[];
+    for(let i=0;i<49;i++){const mesh=new THREE.Mesh(this.grassCells[0],mat);mesh.frustumCulled=false;this.grass.add(mesh);this.grassTiles.push(mesh);}
+    this.maxBlades=count;this.visibleBlades=0;this.grassFrustum=new THREE.Frustum();this.grassProjection=new THREE.Matrix4();this.grassBox=new THREE.Box3();
   }
-  update(camera,sky,t,state={}){const dt=Math.min(.05,Math.max(0,t-this.lastTime))||.016;this.lastTime=t;updateVehicleLightUniforms(this.u,state.vehicleLighting);this.torchLevel+=((state.flashlight?1:0)-this.torchLevel)*(1-Math.exp(-dt*13));this.u.torch.value=this.torchLevel;camera.getWorldDirection(this.u.forward.value);this.u.eye.value.copy(camera.position);this.u.sunDirection.value.copy(sky.sun);this.u.daylight.value=sky.day;this.u.twilight.value=sky.twilight;this.u.moonlight.value=sky.moonlight;this.u.clockTime.value=t;}
+  cullGrass(camera){
+    this.grassProjection.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);this.grassFrustum.setFromProjectionMatrix(this.grassProjection);
+    const cx=Math.floor(camera.position.x/6),cz=Math.floor(camera.position.z/6);let i=0;this.visibleBlades=0;
+    for(let dz=-3;dz<=3;dz++)for(let dx=-3;dx<=3;dx++){
+      const tx=cx+dx,tz=cz+dz,x=tx*6,z=tz*6,mesh=this.grassTiles[i++];
+      mesh.geometry=this.grassCells[((tz+3)%6+6)%6*6+((tx+3)%6+6)%6];mesh.position.set(x,0,z);
+      const nx=Math.max(x,Math.min(x+6,camera.position.x))-camera.position.x,nz=Math.max(z,Math.min(z+6,camera.position.z))-camera.position.z;
+      this.grassBox.min.set(x-.15,-.03,z-.15);this.grassBox.max.set(x+6.15,.60,z+6.15);
+      mesh.visible=nx*nx+nz*nz<18.15*18.15&&this.grassFrustum.intersectsBox(this.grassBox);
+      if(mesh.visible)this.visibleBlades+=mesh.geometry.instanceCount;
+    }
+  }
+  update(camera,sky,t,state={}){const dt=Math.min(.05,Math.max(0,t-this.lastTime))||.016;this.lastTime=t;updateVehicleLightUniforms(this.u,state.vehicleLighting);this.torchLevel+=((state.flashlight?1:0)-this.torchLevel)*(1-Math.exp(-dt*13));this.u.torch.value=this.torchLevel;camera.getWorldDirection(this.u.forward.value);this.u.eye.value.copy(camera.position);this.u.sunDirection.value.copy(sky.sun);this.u.daylight.value=sky.day;this.u.twilight.value=sky.twilight;this.u.moonlight.value=sky.moonlight;this.u.clockTime.value=t;this.cullGrass(camera);}
 }
