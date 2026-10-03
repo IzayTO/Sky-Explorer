@@ -17,3 +17,61 @@ html,body{width:100%;height:100%;margin:0;overflow:hidden;overscroll-behavior:no
 @media(max-width:900px){.movement-actions{left:154px;bottom:calc(214px + var(--safe-bottom))}}
 @media(max-width:600px){.movement-actions{left:148px;bottom:calc(205px + var(--safe-bottom));gap:8px}.movement-actions .icon-button{width:40px;height:40px}.on-moon #clock{font-size:9px}.on-moon .moment{gap:8px}.on-moon #moment-name{max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
 @media(max-height:540px) and (orientation:landscape){.movement-actions{left:146px;bottom:calc(30px + var(--safe-bottom))}}
+
+/* 2.2 — independent thumb controls. The timeline owns the bottom centre;
+   actions and telescope occupy separate rows on its right, never its surface. */
+.movement-actions{left:auto;right:max(28px,env(safe-area-inset-right));bottom:calc(52px + var(--safe-bottom));display:grid;grid-template-columns:52px 52px;grid-template-rows:52px 52px;gap:10px}
+.movement-actions .icon-button{width:52px;height:52px;touch-action:none;background:radial-gradient(circle at 35% 28%,#cadfe21c,#11202bac);border:1px solid #e6eef140;box-shadow:inset 0 0 20px #d9eff308;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.movement-actions .held{border-color:var(--accent);background-color:#b4ccd329;transform:scale(.94)}
+#flashlight-button{grid-area:1 / 1}#sprint-button,#boost-button{grid-area:2 / 1}#jump-button{grid-area:2 / 2}#vehicle-exit{grid-area:1 / 2}
+#jump-button svg{width:25px;height:25px}#vehicle-exit svg{width:22px;height:22px}
+#boost-button{--charge:1;position:relative}#boost-button:after{content:'';position:absolute;inset:4px;border:1px solid var(--accent);border-radius:50%;opacity:calc(.12 + var(--charge)*.7);pointer-events:none}
+#boost-button.recharging{color:#a5b3b9}#boost-button.boost-active{background-color:#b8d8ed35;border-color:var(--accent)}
+#flashlight-button[data-mode="2"]{box-shadow:0 0 17px #c9e6ff22,inset 0 0 13px #c9e6ff1c}#flashlight-button[data-mode="2"]:after{content:'II';font-size:8px;position:absolute;bottom:5px}
+.vehicle-enter{position:absolute;transform:translate(-50%,-50%);width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;border-color:#e9e6d999;background:#16232bd9;z-index:6;box-shadow:0 3px 28px #0005}
+.vehicle-enter:hover{transform:translate(-50%,-50%) scale(1.04)}.vehicle-enter:active{transform:translate(-50%,-50%) scale(.96)}.vehicle-enter svg{width:26px;height:26px}.enter-caption{position:absolute;top:64px;left:50%;transform:translateX(-50%);white-space:nowrap;color:#f2f1e9;font-size:11px;text-shadow:0 1px 5px #000}.enter-caption kbd{margin-left:4px;background:#172028bb}
+.vehicle-status{position:absolute;left:28px;bottom:calc(30px + var(--safe-bottom));display:grid;grid-template-columns:auto auto;gap:3px 18px;padding:13px 16px;border-radius:17px;font-size:11px;color:var(--muted);max-width:260px;pointer-events:none}
+#vehicle-name{font:400 15px Georgia,serif;color:var(--ink)}#vehicle-speed{color:var(--accent);text-align:right;font-variant-numeric:tabular-nums}#boost-status{text-align:right;font-variant-numeric:tabular-nums}.drive-keys{grid-column:1 / -1;font-size:10px;opacity:.68;margin-top:4px}
+body:not(.touch-controls) #joystick,body:not(.touch-controls) #jump-button,body:not(.touch-controls) #sprint-button,body:not(.touch-controls) #boost-button,body:not(.touch-controls) #flashlight-button{display:none!important}
+body:not(.touch-controls) .movement-actions{display:block;bottom:calc(110px + var(--safe-bottom))}
+.touch-controls .scope-actions,.touch-controls.using-scope .scope-actions{bottom:calc(180px + var(--safe-bottom));right:max(28px,env(safe-area-inset-right))}
+.touch-controls #look-hint{right:30px;bottom:calc(249px + var(--safe-bottom))}
+.touch-controls .drive-keys,.touch-controls .enter-caption kbd{display:none}
+.touch-controls .vehicle-status{bottom:calc(196px + var(--safe-bottom));left:40px;max-width:235px;font-size:10px}
+.using-scope #flashlight-button{visibility:visible}.using-scope .movement-actions{opacity:.65}
+.panel-open .movement-actions,.panel-open #joystick,.panel-open .vehicle-status,.panel-open .scope-actions,.panel-open #vehicle-enter{visibility:hidden;pointer-events:none!important}
+.panel-open .scope-actions button{pointer-events:none!important}.ui-hidden .vehicle-enter{display:none!important}
+@media(max-width:900px) and (min-height:541px){
+ .touch-controls .movement-actions{bottom:calc(184px + var(--safe-bottom));right:23px}
+ .touch-controls .scope-actions,.touch-controls.using-scope .scope-actions{bottom:calc(312px + var(--safe-bottom));right:23px}
+ .touch-controls #look-hint{bottom:calc(375px + var(--safe-bottom))}
+ .touch-controls .vehicle-status{left:24px;bottom:calc(324px + var(--safe-bottom));padding:10px 12px;gap:3px 10px;max-width:calc(100% - 185px)}
+ .touch-controls .vehicle-status #vehicle-name{font-size:13px}
+ .touch-controls #vehicle-lights{grid-column:1 / -1}.touch-controls #boost-status{grid-column:1 / -1;text-align:left}
+}
+@media(max-width:600px) and (min-height:541px){
+ .touch-controls .movement-actions{right:max(20px,env(safe-area-inset-right));bottom:calc(181px + var(--safe-bottom));gap:10px;grid-template-columns:48px 48px;grid-template-rows:48px 48px}
+ .touch-controls .movement-actions .icon-button{width:48px;height:48px}
+ .touch-controls .scope-actions,.touch-controls.using-scope .scope-actions{bottom:calc(303px + var(--safe-bottom));right:20px}
+ .touch-controls .scope-actions #scope-controls{bottom:59px;right:0}
+ .touch-controls #look-hint{bottom:calc(365px + var(--safe-bottom))}
+ .touch-controls .vehicle-status{left:23px;bottom:calc(318px + var(--safe-bottom));max-width:calc(100% - 181px);grid-template-columns:1fr}
+ .touch-controls #vehicle-speed{text-align:left}.touch-controls #vehicle-name{white-space:nowrap;font-size:12px}
+}
+@media(max-height:540px) and (orientation:landscape){
+ .touch-controls #joystick,.touch-controls.using-scope #joystick{left:max(24px,env(safe-area-inset-left));bottom:calc(24px + var(--safe-bottom))}
+ .touch-controls .movement-actions{right:max(24px,env(safe-area-inset-right));bottom:calc(24px + var(--safe-bottom));grid-template-columns:46px 46px;grid-template-rows:46px 46px;gap:9px}
+ .touch-controls .movement-actions .icon-button{width:46px;height:46px}
+ .touch-controls .scope-actions,.touch-controls.using-scope .scope-actions{right:max(24px,env(safe-area-inset-right));bottom:calc(143px + var(--safe-bottom))}
+ .touch-controls .scope-button{padding:10px 14px;min-height:42px;font-size:11px}
+ .touch-controls .scope-actions #scope-controls{bottom:55px}
+ .touch-controls #look-hint{display:none}
+ .touch-controls .vehicle-status{left:max(24px,env(safe-area-inset-left));bottom:calc(149px + var(--safe-bottom));padding:9px 11px;gap:3px 7px;font-size:9px;max-width:205px}
+ .touch-controls #vehicle-name{font-size:12px}
+ .touch-controls .timeline{width:min(330px,calc(100% - 320px));padding:11px 14px}
+ .touch-controls .timeline-title{font-size:13px}.touch-controls #timeline-status{font-size:9px}.touch-controls .timeline-presets button{font-size:9px}
+ .touch-controls .timeline .icon-button{width:27px;height:32px}.touch-controls .timeline .play-button{width:35px;height:35px}
+}
+@media(max-width:650px) and (max-height:540px) and (orientation:landscape){.touch-controls .timeline{width:calc(100% - 294px);padding:10px}.touch-controls .timeline-title{font-size:11px}.touch-controls #timeline-status{font-size:8px}.touch-controls .timeline-top{gap:4px}.touch-controls .timeline-presets button{font-size:8px}}
+.using-scope .vehicle-status{display:none!important}
+@media(max-width:1100px){body:not(.touch-controls) .vehicle-status{bottom:calc(200px + var(--safe-bottom))}}

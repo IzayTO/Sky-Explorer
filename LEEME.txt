@@ -1,218 +1,163 @@
-A CIELO ABIERTO — TIERRA Y LUNA 2.1
+A CIELO ABIERTO — PARCHE 2.2
+Controles, vehículos y Luna atmosférica
 
-ACTUALIZACIÓN SOBRE LA ENTREGA 2.0
+INSTALACIÓN SOBRE TU VERSIÓN ACTUAL (2.1)
 
-Este ZIP es un parche: contiene únicamente 9 archivos sueltos.
+Este ZIP contiene 12 archivos sueltos. Descomprímelo y sube su contenido
+junto a los archivos existentes, respetando los nombres.
 
-REEMPLAZA estos 8 archivos, con los mismos nombres y en la raíz:
-index.html, styles.css, app.js, sky.js, terrain.js, lunar-sky.js,
-lunar-terrain.js y LEEME.txt.
+AÑADE estos 2 archivos nuevos:
+  vehicle-models.js
+  vehicles.js
 
-AÑADE este archivo nuevo en esa misma raíz:
-flashlight.js.
+REEMPLAZA estos 10 archivos:
+  index.html
+  styles.css
+  app.js
+  controls.js
+  sky.js
+  terrain.js
+  lunar-sky.js
+  lunar-terrain.js
+  flashlight.js
+  LEEME.txt
 
-Conserva todos los demás archivos que ya subiste, incluidos el motor 3D,
-el catálogo y las texturas. No borres el repositorio ni cambies Pages.
-No subas el ZIP sin descomprimir. No se requieren carpetas ni compilación.
-Espera a que Pages termine de publicar y recarga. Si ves la versión anterior,
-en computadora usa Ctrl+Shift+R (Cmd+Shift+R en Mac); en teléfono cierra
-la pestaña anterior y abre de nuevo el enlace de Pages.
-
-CAMBIOS DE ESTA ACTUALIZACIÓN
-
-- Sol y Luna desde Tierra: diámetro visible aproximadamente 3,6 y 3,8
-  veces mayor. Desde Luna: Sol aproximadamente 3,4 veces, Tierra 3,5 veces.
-  Son tamaños visuales elegidos siguiendo las guías dibujadas; no están
-  a escala angular astronómica. El brillo del terreno no se multiplica
-  por el nuevo tamaño de los discos.
-- Halo solar lunar más amplio, óptico y suave; se atenúa gradualmente
-  al sacar el Sol del campo visual o al quedar oculto por el relieve.
-- La fase de la Tierra siempre responde a la dirección real del Sol
-  de este ciclo. El deslizador de fase mueve también la línea de tiempo;
-  ya no hay una lámpara manual desconectada de la posición solar.
-- Linterna en Tierra y Luna con el mismo haz, casi el doble de ancho
-  a igual distancia; centro suave, anillo exterior y alcance gradual.
-- Cielo lunar más poblado y brillante. Se recupera en aproximadamente
-  un segundo al apartar la mirada de las fuentes luminosas.
-- Se comparten los búferes de estrellas entre destinos, se evitan cálculos
-  de cámara y de vista previa cuando no cambian, y la linterna deja de
-  recorrer muestras de sombra una vez que el haz está totalmente oculto.
-  El relieve, las texturas y las capas de cielo se mantienen.
-- La brújula conserva los puntos cardinales al dar varias vueltas.
-- Telescopio terrestre recalibrado para que la Luna ampliada todavía se
-  vea grande y completa al centrarla a 3×. Desde Luna, la Tierra ampliada
-  sobrepasa la lente a gran aumento, como se pidió.
-
-PONER TU PROPIA TEXTURA DE LA TIERRA
-
-Sí: reemplaza únicamente earth.jpg por tu mapa. El código lo envuelve
-sobre la esfera automáticamente, con las mismas fases, giro e iluminación.
-
-Formato: JPEG real, nombre exacto earth.jpg (minúsculas).
-Proyección: equirectangular de toda la superficie, 360° × 180°.
-Proporción: 2:1, el ancho debe ser el doble de la altura.
-Recomendado: 4096 × 2048 píxeles. También sirve 2048 × 1024.
-Orientación: norte arriba y sur abajo. El mapa debe unir bien sus extremos.
-Colores: sRGB; textura de color diurna, sin etiquetas ni sombra nocturna
-pintada. No sirve un mapa Mercator, una foto circular o una imagen de
-un solo hemisferio. Si trae nubes, quedarán integradas en la textura;
-el proyecto no añade otra capa de nubes encima.
-
-Exporta o convierte realmente a JPEG; cambiar solo la extensión de un PNG
-no lo convierte. Sube earth.jpg en la raíz reemplazando el anterior,
-espera la publicación y recarga para actualizar la imagen guardada.
-Esta actualización NO incluye ni sustituye earth.jpg.
-
-CÓMO EXPLORAR
-
-Ahora puedes entrar en Tierra o Luna desde la portada.
-Cada destino conserva sus controles, su paisaje y su sonido.
-Ambos tienen salto con su propia gravedad, además de linterna.
-
-TELÉFONO
-- Joystick: caminar en cualquier dirección.
-- Arrastra con otro dedo para mirar mientras caminas.
-- Botón con flecha hacia arriba junto al joystick: saltar.
-- El botón de linterna enciende/apaga la luz en ambos destinos.
-- Ajustes: cielo, fases, velocidad, visión, sonido y calidad.
-- El ojo oculta los controles; vuelve a pulsarlo para mostrarlos.
+Conserva los demás archivos. No se incluyen ni se reemplazan earth.jpg,
+moon.jpg, las texturas lunares, los sonidos, el catálogo ni three.module.js.
+Si ya pusiste tu propio mapa de la Tierra, seguirá utilizándose.
+No hace falta compilar, instalar dependencias ni cambiar la configuración
+que ya tienes. Espera la publicación habitual de Pages y recarga la página.
+Si aparece la interfaz anterior, recarga con Ctrl+Shift+R o abre una pestaña
+nueva en el teléfono. El ZIP no se sube comprimido.
 
 COMPUTADORA
-- W/A/S/D: caminar. Q/E o flechas laterales: girar.
-- Arrastra el ratón para mirar. Doble clic: capturar el ratón; Esc: liberar.
-- Espacio: saltar. F: linterna (ambos destinos).
-- T: telescopio; 0/1/2/3: aumentos cuando está abierto.
-- H: ocultar/mostrar controles. M: silenciar/activar ambiente.
 
-LA LUNA
+  W / S o flechas arriba / abajo : avanzar / retroceder.
+  A / D                          : moverse de lado a pie; dirigir al conducir.
+  Q / E o flechas izquierda / derecha : girar.
+  Espacio                        : saltar, a pie o con el vehículo.
+  Mantener Shift                 : correr a pie, sin límite de energía.
+  Pulsar Shift al conducir       : impulso de 2,5 segundos.
+  F                              : linterna; al conducir, faros.
+  R                              : sentarse o bajar del vehículo.
+  Arrastrar                      : mirar libremente.
+  Doble clic                     : capturar el ratón; Esc para liberarlo.
+  T                              : telescopio.
+  H                              : ocultar o mostrar la interfaz.
+  M                              : sonido.
 
-Superficie gris mate de 4 × 4 km con cuencas, bordes elevados, montículos
-irregulares y grano fino. Puedes recorrer un radio de 600 m. El límite
-invisible queda muy dentro del terreno y no permite alcanzar su borde.
-El lugar es un paisaje imaginado, no una reproducción de un sitio de alunizaje.
-No hay naves, banderas ni otros objetos construidos.
+En computadora no aparecen el joystick ni los botones táctiles de salto,
+linterna, sprint e impulso. La salida del vehículo conserva un botón
+visible, además de R. Los faros también se pueden elegir desde Ajustes.
 
-El suelo que ves y el suelo que pisas comparten el mismo mapa de alturas.
-Puedes bajar a los cráteres, caminar por sus pendientes y saltar. Al dejar
-un borde, caes; no se activa un modo de vuelo ni hay doble salto.
+TELÉFONO Y TABLETA
 
-Gravedad: Tierra 9,80665 m/s²; Luna 1,62 m/s². Con el mismo impulso inicial
-(3,25 m/s), un salto desde terreno horizontal sube unos 0,54 m en Tierra y
-3,26 m en Luna. La duración aproximada es 0,66 s frente a 4,01 s.
-Las caídas más altas tienen su propia duración. El aterrizaje amortigua
-ligeramente la cámara y añade dos contactos suaves, con variaciones.
+El joystick queda a la izquierda. A pie permite avanzar, retroceder y
+moverse de lado. Al conducir, hacia los lados dirige las ruedas.
 
-ILUMINACIÓN Y ADAPTACIÓN
+A la derecha están salto, linterna y correr. Mantén correr presionado para
+sprintar. Puedes arrastrar desde los botones de acción para seguir mirando
+con el mismo dedo, sin soltar el joystick. Los punteros son independientes:
+caminar, mirar, saltar y encender la luz no cancelan los otros toques.
 
-La Luna no tiene un cielo azul ni atardeceres atmosféricos. El fondo es
-negro; las zonas iluminadas contrastan con las sombras profundas.
-El resplandor alrededor del Sol representa un efecto óptico de la visión.
-Las sombras del terreno se calculan consultando su propio relieve.
+Al subir a un vehículo desaparece correr y aparece el impulso (rayo).
+Salto se mantiene. La linterna se sustituye por los faros y aparece salir.
+Cada pulsación de luz recorre apagados → bajas → altas → apagados.
+El telescopio ocupa una fila separada de las acciones. La disposición se
+adapta a orientación vertical y horizontal y a los márgenes del teléfono.
 
-La mirada condiciona la visibilidad de las estrellas: el Sol dentro del
-campo visual las apaga rápidamente; el terreno brillante también reduce
-su visibilidad. La Tierra tiene un efecto más moderado. Al mirar un cielo
-oscuro alejado de esas luces, las estrellas y la Vía Láctea se recuperan
-gradualmente, en aproximadamente un segundo (99 % de recuperación).
-La adaptación a oscuridad está acelerada para esta experiencia.
-No pretende reproducir los muchos minutos de adaptación completa del ojo.
+VEHÍCULOS
 
-La Tierra proyecta una luz azul blanca muy suave sobre las pendientes que
-la miran. Su intensidad depende de la porción iluminada. Esa luz pertenece
-al entorno: no se apaga físicamente al girar la cabeza. La orientación de
-las superficies y la exposición de la mirada producen la diferencia visual.
-En ausencia de ambas fuentes, el terreno queda prácticamente negro.
+TIERRA: Sendero, una cuatrimoto de cuatro ruedas, con manillar, parrillas,
+estribos, motor, escape, suspensión, neumáticos y dos faros delanteros.
 
-La linterna sigue la cámara sin mostrar un modelo ni manos. Tiene un haz
-central, un segundo anillo y una caída suave hacia fuera. El relieve puede
-ocultar su luz. Funciona también en Ajustes > Exploración. Durante el uso
-del telescopio se oculta su botón exterior para dejar libre la lente.
+LUNA: Selene, un rover abierto con dos asientos delanteros, armazón tubular,
+cinturones, consola, antena, plato de comunicaciones, equipo posterior,
+suspensión y ruedas con nervaduras. Tiene dos faros delanteros y no tiene
+techo. Es un modelo original inspirado en vehículos de exploración lunar;
+no es un modelo oficial descargado de NASA. El segundo asiento es visual:
+esta entrega sigue siendo una experiencia de un solo jugador.
 
-CICLO Y FASES
+Los dos son modelos 3D creados en el código incluido, no imágenes planas.
+Aparecen cerca del punto de llegada. Acércate y mira hacia el vehículo:
+solo entonces aparece un círculo discreto con el icono para sentarse.
+Tócalo o pulsa R. La cámara pasa al asiento y puedes mirar alrededor sin
+cambiar hacia dónde apuntan las ruedas. Al girar el vehículo, la mirada
+acompaña el giro conservando su orientación relativa.
 
-La barra lunar muestra un porcentaje de un ciclo, sin contar días.
-Representa un día solar lunar de unos 29,53 días terrestres, comprimido a
-los minutos que elijas. Reproducción, pausa, inversión y bucle funcionan
-como en Tierra. Al llegar al extremo derecho, el control vuelve al inicio.
+Aceleran y frenan progresivamente, tienen reversa y las ruedas giran y
+orientan con la dirección. Su posición se conserva al bajar y al cambiar
+de destino durante esa sesión. Volver al punto de inicio también devuelve
+el vehículo a su lugar de llegada.
 
-El punto de observación representa la cara cercana: la Tierra permanece
-casi fija y tiene una oscilación pequeña. El Sol atraviesa el cielo según
-un horizonte local de latitud lunar media. No hay una atmósfera que coloree
-su salida o puesta. La Tierra tiene fases ligadas siempre a la posición
-del Sol; el lado oscuro no tiene luces urbanas. Si mueves el deslizador de
-fase, también cambia el momento del ciclo, manteniendo alineada la luz.
-El terminador tiene una transición
-suave sobre una esfera, sin desenfocar toda su textura.
+El salto usa el mismo botón o Espacio. El suelo y las ruedas consultan el
+relieve existente. La gravedad es 9,80665 m/s² en Tierra y 1,62 m/s² en Luna;
+por eso los saltos y las caídas lunares duran más. El impulso vertical del
+vehículo es de 3,4 m/s: sobre terreno plano equivale a unos 0,59 m de salto
+en Tierra y 3,57 m en Luna. Los vehículos pueden caer dentro de cráteres.
+La conducción y la suspensión son una aproximación ligera para esta
+experiencia, sin simulación mecánica completa de un vehículo real.
 
-Para cerrar el bucle visual, la textura terrestre completa 29 giros por
-ciclo; su rotación se detiene al pausar el tiempo.
+El boost dura 2,5 segundos y después tarda 5 segundos en volver a estar
+listo. Mantener Shift no lo reactiva continuamente: suelta y pulsa de nuevo.
+No hay combustible limitado ni stamina al caminar. El pequeño indicador
+muestra velocidad, faros y disponibilidad del impulso.
 
-El modelo de órbita es aproximado: usa el día sinódico y la rotación
-sincrónica como base, con libración ilustrativa. No calcula una efeméride
-para una fecha concreta, eclipses, precesión o perturbaciones orbitales.
-La orientación del catálogo se escoge para la experiencia y cierra en bucle.
-Los tamaños aparentes se amplían según las referencias visuales: desde
-Luna, la Tierra ocupa unos 8,9°; el Sol, unos 3,6°. Desde Tierra, la Luna
-y el Sol ocupan unos 2,9° y 3,0°. No es una escala astronómica estricta. La Tierra del cielo emplea una ilustración geográfica local de
-4096 × 2048 con continentes, océanos, casquetes y nubes procedurales.
-No es una fotografía satelital de NASA ni un mapa de precisión.
+Para bajar, toca salir o pulsa R. El vehículo frena y se elige una posición
+al lado, sobre el terreno y fuera de su carrocería. Si estás en el aire,
+aterriza primero. Así no se teletransporta al jugador al fondo del cráter.
 
-TELESCOPIO Y ESTRELLAS
+LUCES
 
-0× conserva la visión normal dentro de la lente. 1×, 2× y 3× son niveles
-de acercamiento, no magnificaciones ópticas literales. A 3×, la Tierra es
-mayor que la apertura del telescopio y puedes recorrer su superficie con
-la mirada. El botón de planeta centra la Tierra; en el destino Tierra,
-el botón de luna sigue centrando la Luna. Guarda el telescopio para
-modificar el campo de visión normal.
+Los dos focos nacen en la parte delantera del vehículo y siguen el chasis,
+incluidas pendientes y giros. No giran con la cabeza. Las bajas iluminan
+una zona ancha y cercana; las altas llegan más lejos. En Luna, el relieve
+oculta la luz y conserva sus sombras. La iluminación dentro de la vista
+participa en la atenuación del cielo, con el mismo cambio gradual existente.
 
-Se mantiene el catálogo real de 41 411 estrellas y su campo adicional
-procedural de 96 000 puntos débiles con posiciones estables. Desde la Luna
-se revelan aproximadamente 66 000 posiciones potenciales en el conjunto
-de toda la esfera al estar completamente adaptado y sin zoom, frente a
-un umbral mucho menor en la entrega anterior. No todas están en tu campo
-de visión ni se aprecian igual de brillantes. No hay centelleo atmosférico. El zoom
-revela puntos más débiles progresivamente. No se muestran todos a la vez.
-La Vía Láctea es otra capa, más visible en Luna, con polvo y densidad variada.
-No es una carta celeste para navegación astronómica.
+La linterna personal se guarda mientras conduces. Al bajar recupera el
+estado que tenía antes de subir. Los faros conservan su estado al estacionar.
+Puedes ver el vehículo con la linterna cuando te acercas en la oscuridad.
 
-SONIDO
+LUNA EN EL CIELO DE LA TIERRA
 
-Tierra conserva el viento y las pisadas de pasto de la entrega anterior.
-Luna usa un fondo grave discreto y contactos apagados sobre el regolito,
-con variación al caminar, saltar y aterrizar. Es una interpretación sonora
-interior para inmersión, no sonido propagándose en el vacío. No hay viento
-lunar, pájaros ni música espacial. Ajusta el volumen o silencia el ambiente.
-Si el navegador bloquea audio, pulsa el control de sonido dentro del destino.
+Ajustes > Cielo > Aspecto de la Luna:
 
-CONTINUIDAD Y RENDIMIENTO
+  Atmosférica (predeterminada): la zona sin luz toma el color del cielo,
+  la fase nueva desaparece y no aparece un contorno blanco en la sombra.
+  La parte iluminada conserva la textura y el terminador suave.
 
-Al volver a la portada y cambiar de destino se conserva el momento,
-la fase, la posición y la orientación de cada paisaje durante esa sesión.
-Las preferencias generales se guardan únicamente en tu navegador.
-La linterna se apaga al entrar y el ciclo empieza en pausa.
+  Disco sólido: conserva el aspecto anterior de la parte oscura.
 
-La Luna carga sus recursos al seleccionarla. Se comparten los búferes del catálogo;
-los tramos lejanos del suelo tienen menos geometría que la zona transitable.
-Las sombras consultan alturas, sin ray tracing de una escena completa ni
-mapas de sombras gigantes. Las estrellas se dibujan en una sola llamada.
-Automático adapta la resolución bajo lentitud sostenida; Alto y Equilibrado
-permiten fijarla. No elimina el relieve, las capas o las fases.
-La sesión pausa entrada y sonido cuando la pestaña pasa a segundo plano.
-Todos los recursos son locales. No se requieren CDN, cuentas, claves,
-instalación ni conexiones a otros servicios durante la exploración.
+Esta preferencia se guarda en tu navegador. No cambia las fases de la
+Tierra observada desde la Luna ni la relación entre su iluminación y el Sol.
 
-ENTREGA Y REVISIÓN
+TEXTURA TERRESTRE PERSONALIZADA
 
-Esta actualización se aplica sobre la entrega completa 2.0 para computadora
-y teléfono.
-Meta Quest inmersivo queda para más adelante. Se revisaron la integración
-con eventos de interfaz simulados, el cambio de destinos y su recuperación,
-el salto y la caída con integración balística, y la compilación/renderizado
-local de los shaders nuevos: Sol, Tierra, estrellas, galaxia y relieve.
-Se revisaron vista diurna/nocturna, fases, telescopio y linterna.
-No se ha medido esta entrega en un iPhone físico; no se promete una tasa
-concreta de cuadros en Safari. El ZIP contiene el motor 3D real y los recursos
-finales; no incluye adaptadores de revisión ni archivos de desarrollo.
+Puedes seguir reemplazando earth.jpg con un JPEG equirectangular completo,
+360° × 180°, proporción 2:1, norte arriba. Recomendado: 4096 × 2048 píxeles;
+2048 × 1024 también funciona. Usa un mapa diurno sin etiquetas ni sombras
+nocturnas pintadas. La esfera aplica iluminación y fases automáticamente.
+Cambiar la extensión de un PNG a .jpg no lo convierte: expórtalo como JPEG.
 
-Créditos y licencias: CREDITOS.txt, THREE-LICENSE.txt y STARS-LICENSE.txt.
+RENDIMIENTO Y ALCANCE
+
+La carrocería y sus detalles se agrupan en una sola malla por vehículo;
+las cuatro ruedas y el mando son las piezas animadas. Se añaden seis
+llamadas de dibujo por vehículo. Los vehículos estacionados no repiten
+el cálculo de conducción. No se añaden archivos grandes ni descargas de
+modelos, bibliotecas o texturas externas. Se mantienen las opciones de
+resolución existentes y los límites de exploración.
+
+Se revisaron la integración de controles, los toques simultáneos,
+entrada/salida, fases, continuidad entre destinos, saltos, impulso y caídas,
+así como los shaders y las vistas de los modelos mediante render local.
+No se ha medido el rendimiento en un iPhone físico. El ZIP no incluye
+herramientas de revisión ni archivos de desarrollo.
+
+Los ajustes del cielo, tamaños, estrellas, telescopio y texturas de la
+entrega anterior se conservan. La recuperación del cielo lunar continúa
+acelerada a aproximadamente un segundo para esta experiencia. Los tamaños
+de los astros y el ciclo son ilustrativos, no una efeméride astronómica.
+
+Créditos anteriores: CREDITOS.txt, THREE-LICENSE.txt y STARS-LICENSE.txt.

@@ -1,6 +1,6 @@
 import * as THREE from './three.module.js';
-import {clamp} from './sky.js?v=2.1';
-import {flashlightGLSL} from './flashlight.js?v=2.1';
+import {clamp} from './sky.js?v=2.2';
+import {flashlightGLSL,vehicleLightGLSL,vehicleLightUniforms,updateVehicleLightUniforms} from './flashlight.js?v=2.2';
 
 // One continuous height field drives both the drawn surface and foot collision.
 // Directional and torch occlusion sample that same field: no fake shadow decals.
@@ -14,11 +14,11 @@ export class LunarTerrain{
     for(let i=0;i<this.heights.length;i++)this.heights[i]=(pixels[i*4]*256+pixels[i*4+1])/65535*256-128;
     heightTexture.flipY=false;heightTexture.colorSpace=THREE.NoColorSpace;heightTexture.generateMipmaps=false;heightTexture.minFilter=heightTexture.magFilter=THREE.LinearFilter;heightTexture.needsUpdate=true;
     regolith.colorSpace=THREE.NoColorSpace;regolith.wrapS=regolith.wrapT=THREE.RepeatWrapping;regolith.anisotropy=4;
-    this.u={heightMap:{value:heightTexture},grain:{value:regolith},sun:{value:new THREE.Vector3()},earth:{value:new THREE.Vector3()},earthPower:{value:.04},torch:{value:0},eye:{value:new THREE.Vector3()},forward:{value:new THREE.Vector3()},quality:{value:1}};
+    this.u={...vehicleLightUniforms(),heightMap:{value:heightTexture},grain:{value:regolith},sun:{value:new THREE.Vector3()},earth:{value:new THREE.Vector3()},earthPower:{value:.04},torch:{value:0},eye:{value:new THREE.Vector3()},forward:{value:new THREE.Vector3()},quality:{value:1}};
     this.material=new THREE.ShaderMaterial({uniforms:this.u,extensions:{derivatives:true},vertexShader:`varying vec3 vWorld,vNormal;
       void main(){vWorld=position;vNormal=normal;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
       fragmentShader:`precision highp float;varying vec3 vWorld,vNormal;uniform sampler2D heightMap,grain;uniform vec3 sun,earth,eye,forward;uniform float earthPower,torch,quality;
-      ${flashlightGLSL}
+      ${flashlightGLSL}${vehicleLightGLSL}
       float triangleHeight(vec2 p);
       float shadow(vec3 p,vec3 light){if(light.y<-.02)return 0.;float visible=1.,dist=2.;
         for(int i=0;i<21;i++){vec3 q=p+light*dist;if(max(abs(q.x),abs(q.z))>2046.)break;float gap=q.y-triangleHeight(q.xz);visible=min(visible,smoothstep(-.28,.32+dist*.003,gap));if(visible<.015)break;dist=dist*1.37+1.8;}
@@ -35,11 +35,16 @@ export class LunarTerrain{
         n=normalize(n-bump*.037*(1.-smoothstep(25.,110.,distanceToEye)));
         vec3 safePoint=p+normalize(vNormal)*.24;
         float solar=max(0.,dot(n,sun)),earthLit=max(0.,dot(n,earth));
-        float s=0.,e=0.;if(solar>.001&&sun.y>-.01)s=solar*shadow(safePoint,sun);
-        if(earthPower>.0001&&earthLit>.001)e=earthLit*shadow(safePoint,earth)*earthPower;
+        float s=0.,e=0.;if(solar>.001&&sun.y>-.01)s=solar*shadow(safePoint,sun)*vehicleOcclusion(safePoint,sun);
+        if(earthPower>.0001&&earthLit>.001)e=earthLit*shadow(safePoint,earth)*earthPower*vehicleOcclusion(safePoint,earth);
         vec3 illumination=vec3(.000025)+vec3(1.,.98,.93)*s*1.38+vec3(.46,.63,1.)*e;
         if(torch>.001){float beam=flashlightBeam(p-eye,forward)*torch;
           if(beam>.001){vec3 delta=eye-p;float len=length(delta);vec3 toLamp=delta/max(len,.001);float occlusion=torchShadow(safePoint,toLamp,len);illumination+=vec3(.92,.96,1.)*(.12+.88*max(dot(n,toLamp),0.))*occlusion*beam;}}
+        if(lampMode>.001){
+          float beamL=headlightBeam(p-lampLeft),beamR=headlightBeam(p-lampRight);
+          if(beamL>.001){vec3 delta=lampLeft-p;float len=length(delta);vec3 l=delta/max(len,.001);illumination+=vec3(.92,.96,1.)*(.12+.88*max(dot(n,l),0.))*beamL*torchShadow(safePoint,l,len);}
+          if(beamR>.001){vec3 delta=lampRight-p;float len=length(delta);vec3 l=delta/max(len,.001);illumination+=vec3(.92,.96,1.)*(.12+.88*max(dot(n,l),0.))*beamR*torchShadow(safePoint,l,len);}
+        }
         float albedo=.28+(mottling-.5)*.16+(grains-.5)*.12;
         vec3 linear=vec3(albedo*.99,albedo,albedo*1.015)*illumination;
         vec3 color=pow(max(linear,vec3(0.)),vec3(1./2.2));
@@ -69,5 +74,5 @@ export class LunarTerrain{
     }
   }
   visibleFrom(point,direction){if(direction.y<-.08)return 0;for(let d=8;d<1400;d=d*1.35+5){const x=point.x+direction.x*d,z=point.z+direction.z*d;if(this.heightAt(x,z)>point.y+direction.y*d+.35)return 0;}return 1;}
-  update(camera,sky,t,state={}){const dt=clamp(t-this.lastTime,0,.05)||.016;this.lastTime=t;this.torchLevel+=((state.flashlight?1:0)-this.torchLevel)*(1-Math.exp(-dt*13));this.u.torch.value=this.torchLevel;this.u.eye.value.copy(camera.position);camera.getWorldDirection(this.u.forward.value);this.u.sun.value.copy(sky.sun);this.u.earth.value.copy(sky.moon);this.u.earthPower.value=sky.earthshine;}
+  update(camera,sky,t,state={}){const dt=clamp(t-this.lastTime,0,.05)||.016;this.lastTime=t;updateVehicleLightUniforms(this.u,state.vehicleLighting);this.torchLevel+=((state.flashlight?1:0)-this.torchLevel)*(1-Math.exp(-dt*13));this.u.torch.value=this.torchLevel;this.u.eye.value.copy(camera.position);camera.getWorldDirection(this.u.forward.value);this.u.sun.value.copy(sky.sun);this.u.earth.value.copy(sky.moon);this.u.earthPower.value=sky.earthshine;}
 }

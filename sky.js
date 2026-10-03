@@ -14,23 +14,8 @@ float hash(vec3 p){p=fract(p*.3183099+vec3(.11,.37,.71));p*=17.;return fract(p.x
 float noise3(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z);}
 float fbm(vec3 p){return .52*noise3(p)+.27*noise3(p*2.07+4.3)+.14*noise3(p*4.13+12.7)+.07*noise3(p*8.19);}
 `;
-function backdrop(scene,uniforms,fragment,order,transparent=false){
-  const geometry=new THREE.BufferGeometry();
-  geometry.setAttribute('position',new THREE.Float32BufferAttribute([-1,-1,0,3,-1,0,-1,3,0],3));
-  const mesh=new THREE.Mesh(geometry,new THREE.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,uniforms,depthWrite:false,depthTest:false,toneMapped:false,transparent:false,blending:transparent?THREE.AdditiveBlending:THREE.NormalBlending,extensions:{derivatives:true}}));
-  mesh.frustumCulled=false;mesh.renderOrder=order;scene.add(mesh);return mesh;
-}
-function equatorial(ra,dec){ra*=Math.PI/180;dec*=Math.PI/180;return new THREE.Vector3(Math.cos(dec)*Math.cos(ra),Math.sin(dec),Math.cos(dec)*Math.sin(ra));}
-export function phaseName(p){if(p<.012||p>.988)return 'Luna nueva';if(Math.abs(p-.25)<.012)return 'Cuarto creciente';if(Math.abs(p-.5)<.012)return 'Luna llena';if(Math.abs(p-.75)<.012)return 'Cuarto menguante';return p<.25?'Luna creciente':p<.5?'Gibosa creciente':p<.75?'Gibosa menguante':'Luna menguante';}
-
-export class Sky {
-  constructor(scene,moonTexture){
-    this.sun=new THREE.Vector3();this.moon=new THREE.Vector3();this.field=new THREE.Matrix4();this.equatorialTilt=new THREE.Matrix4().makeRotationX(-69*Math.PI/180);this.rotation=new THREE.Matrix4();
-    this.u={inverseProjection:{value:new THREE.Matrix4()},cameraWorld:{value:new THREE.Matrix4()},sunDirection:{value:this.sun},moonDirection:{value:this.moon},day:{value:1},twilight:{value:0},night:{value:0},moonlight:{value:0},sunset:{value:1},phase:{value:.17},time:{value:0},moonMap:{value:moonTexture},pixelRatio:{value:1},zoomReveal:{value:0},starLimit:{value:5.8},field:{value:this.field},milkyOn:{value:1},galacticNormal:{value:new THREE.Vector3()},galacticCenter:{value:new THREE.Vector3()},galacticTangent:{value:new THREE.Vector3()}};
-    this.atmosphere=backdrop(scene,this.u,`
-      varying vec3 vRay;uniform vec3 sunDirection;uniform vec3 moonDirection;uniform float day,twilight,night,moonlight,sunset;
-      void main(){
-        vec3 d=normalize(vRay);float h=max(d.y,0.);float sh=sunDirection.y;
+const atmosphereGLSL=`uniform vec3 sunDirection,moonDirection;uniform float day,twilight,night,moonlight,sunset;
+vec3 atmosphereColor(vec3 d){float h=max(d.y,0.);float sh=sunDirection.y;
         float height=pow(h,.43);
         vec3 dayZenith=vec3(.09,.40,.69),dayHorizon=vec3(.68,.81,.88);
         vec3 nightZenith=vec3(.035,.049,.078),nightHorizon=vec3(.07,.082,.10);
@@ -63,9 +48,25 @@ export class Sky {
         sky+=vec3(.19,.23,.29)*moonlight*(exp(-moonAngle*12.)*.11+exp(-moonAngle*80.)*.12);
         sky+=moonlight*vec3(.008,.011,.018)*(1.-height*.6);
         if(d.y<0.)sky=mix(horizon,sky,smoothstep(-.08,0.,d.y));
-        float dither=fract(52.9829189*fract(dot(gl_FragCoord.xy,vec2(.06711056,.00583715))))-.5;
-        gl_FragColor=vec4(sky+dither/255.,1.);
-      }`,-10000);
+return sky;
+}`;
+function backdrop(scene,uniforms,fragment,order,transparent=false){
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.Float32BufferAttribute([-1,-1,0,3,-1,0,-1,3,0],3));
+  const mesh=new THREE.Mesh(geometry,new THREE.ShaderMaterial({vertexShader:vertex,fragmentShader:fragment,uniforms,depthWrite:false,depthTest:false,toneMapped:false,transparent:false,blending:transparent?THREE.AdditiveBlending:THREE.NormalBlending,extensions:{derivatives:true}}));
+  mesh.frustumCulled=false;mesh.renderOrder=order;scene.add(mesh);return mesh;
+}
+function equatorial(ra,dec){ra*=Math.PI/180;dec*=Math.PI/180;return new THREE.Vector3(Math.cos(dec)*Math.cos(ra),Math.sin(dec),Math.cos(dec)*Math.sin(ra));}
+export function phaseName(p){if(p<.012||p>.988)return 'Luna nueva';if(Math.abs(p-.25)<.012)return 'Cuarto creciente';if(Math.abs(p-.5)<.012)return 'Luna llena';if(Math.abs(p-.75)<.012)return 'Cuarto menguante';return p<.25?'Luna creciente':p<.5?'Gibosa creciente':p<.75?'Gibosa menguante':'Luna menguante';}
+
+export class Sky {
+  constructor(scene,moonTexture){
+    this.sun=new THREE.Vector3();this.moon=new THREE.Vector3();this.field=new THREE.Matrix4();this.equatorialTilt=new THREE.Matrix4().makeRotationX(-69*Math.PI/180);this.rotation=new THREE.Matrix4();
+    this.u={moonNatural:{value:1},inverseProjection:{value:new THREE.Matrix4()},cameraWorld:{value:new THREE.Matrix4()},sunDirection:{value:this.sun},moonDirection:{value:this.moon},day:{value:1},twilight:{value:0},night:{value:0},moonlight:{value:0},sunset:{value:1},phase:{value:.17},time:{value:0},moonMap:{value:moonTexture},pixelRatio:{value:1},zoomReveal:{value:0},starLimit:{value:5.8},field:{value:this.field},milkyOn:{value:1},galacticNormal:{value:new THREE.Vector3()},galacticCenter:{value:new THREE.Vector3()},galacticTangent:{value:new THREE.Vector3()}};
+    this.atmosphere=backdrop(scene,this.u,`
+      varying vec3 vRay;${atmosphereGLSL}
+      void main(){vec3 sky=atmosphereColor(normalize(vRay));float dither=fract(52.9829189*fract(dot(gl_FragCoord.xy,vec2(.06711056,.00583715))))-.5;gl_FragColor=vec4(sky+dither/255.,1.);}
+      `,-10000);
 
     // This is its own diffuse layer, not a cloud of extra star sprites.
     this.milkyWay=backdrop(scene,this.u,`
@@ -95,7 +96,7 @@ export class Sky {
       }`,-9999,true);
     this.createStars(scene);
     this.moonMesh=backdrop(scene,this.u,`
-      varying vec3 vRay;uniform vec3 moonDirection;uniform sampler2D moonMap;uniform float phase,day,night,moonlight;
+      varying vec3 vRay;uniform sampler2D moonMap;uniform float phase,moonNatural;${atmosphereGLSL}
       void main(){
         vec3 d=normalize(vRay);float forward=dot(d,moonDirection);if(forward<.9995)discard;
         vec3 right=normalize(cross(moonDirection,vec3(0.,1.,0.)));vec3 up=normalize(cross(right,moonDirection));
@@ -115,6 +116,16 @@ export class Sky {
         lit+=tex*earthshine*(1.-terminator);
         vec3 aerial=vec3(.31,.46,.60)*day;
         lit=mix(lit,aerial+lit*.48,day*.78);
+        if(moonNatural>.5){
+          // Reproduce the same atmospheric radiance behind the unlit side.
+          // The opaque body still hides stars; the terminator contributes no
+          // artificial rim, and a genuinely new Moon disappears into the air.
+          float sunlit=dot(normal,vec3(sin(phase*6.283185307),0.,-cos(phase*6.283185307)));
+          float visibleLight=(.18+.82*sqrt(max(0.,sunlit)))*smoothstep(0.,.075,sunlit);
+          vec3 background=atmosphereColor(d);
+          vec3 surface=vec3(.94,.94,.90)*pow(luminance,.80)*visibleLight*1.45;
+          lit=background+surface*(1.-day*.62);
+        }
         // Solid lunar disc occludes the stars even near new Moon.
         gl_FragColor=vec4(lit,1.-smoothstep(1.-aa,1.+aa,radius));
       }`,-9997);
@@ -161,7 +172,7 @@ export class Sky {
     this.day=day;this.twilight=twilight;this.night=1-smooth(-.23,.015,sh);
     this.illumination=(1-Math.cos(state.phase*TAU))*.5;
     this.moonlight=Math.pow(this.illumination,1.4)*smooth(-.01,.3,this.moon.y)*(1-day);
-    Object.entries({day,twilight,night:this.night,moonlight:this.moonlight,sunset:state.hour>12?1:0,phase:state.phase,time:t,pixelRatio,zoomReveal:state.zoomReveal,starLimit:5.65+4.8*Math.pow(state.zoomReveal,.78),milkyOn:state.milky?1:0}).forEach(([k,v])=>this.u[k].value=v);
+    Object.entries({moonNatural:state.moonAppearance==='solid'?0:1,day,twilight,night:this.night,moonlight:this.moonlight,sunset:state.hour>12?1:0,phase:state.phase,time:t,pixelRatio,zoomReveal:state.zoomReveal,starLimit:5.65+4.8*Math.pow(state.zoomReveal,.78),milkyOn:state.milky?1:0}).forEach(([k,v])=>this.u[k].value=v);
     camera.updateMatrixWorld();this.u.inverseProjection.value.copy(camera.projectionMatrixInverse);this.u.cameraWorld.value.copy(camera.matrixWorld);
     // Place the richer galactic centre above the horizon through the night in
     // this illustrative sky, while retaining a seamless 24-hour rotation.
@@ -169,7 +180,7 @@ export class Sky {
     this.u.galacticNormal.value.copy(equatorial(192.8595,27.1283)).applyMatrix4(this.field);
     this.u.galacticCenter.value.copy(equatorial(266.4051,-28.9362)).applyMatrix4(this.field);
     this.u.galacticTangent.value.crossVectors(this.u.galacticNormal.value,this.u.galacticCenter.value).normalize();
-    this.stars.visible=sh<.04;this.milkyWay.visible=this.night>.001&&state.milky;this.moonMesh.visible=this.moon.y>-.04;
+    this.stars.visible=sh<.04;this.milkyWay.visible=this.night>.001&&state.milky;this.moonMesh.visible=this.moon.y>-.04&&(state.moonAppearance==='solid'||this.illumination>.0002);
     this.stars.geometry.setDrawRange(0,this.u.starLimit.value>7.83?this.starCount:this.catalogCount);
   }
 }

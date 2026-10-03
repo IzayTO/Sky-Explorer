@@ -1,10 +1,10 @@
 import * as THREE from './three.module.js';
-import {flashlightGLSL} from './flashlight.js?v=2.1';
+import {flashlightGLSL,vehicleLightGLSL,vehicleLightUniforms,updateVehicleLightUniforms} from './flashlight.js?v=2.2';
 // Continuous flat ground, with nearby instanced grass. The shader shades distant
 // detail analytically: no tiling photograph, loaded model, shadow atlas or edge.
 const common=`
 uniform float daylight,twilight,moonlight,clockTime,torch;uniform vec3 sunDirection,eye,forward;
-${flashlightGLSL}
+${flashlightGLSL}${vehicleLightGLSL}
 float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
 vec3 illumination(vec3 base,float occlusion){
@@ -17,10 +17,11 @@ vec3 illumination(vec3 base,float occlusion){
   return lit;
 }
 vec3 torchLight(vec3 lit,vec3 base,vec3 pos,float occlusion){
-  if(torch<.001)return lit;
-  float beam=flashlightBeam(pos-eye,forward)*torch;
-  float incidence=.12+.88*max(normalize(eye-pos).y,0.);
-  return sqrt(lit*lit+base*vec3(.92,.96,1.)*beam*incidence*occlusion*.48);
+  lit*=mix(1.,vehicleOcclusion(pos+vec3(0.,.05,0.),sunDirection),daylight*.82);
+  float beam=0.;
+  if(torch>.001)beam=flashlightBeam(pos-eye,forward)*torch*(.12+.88*max(normalize(eye-pos).y,0.));
+  if(lampMode>.001){beam+=headlightBeam(pos-lampLeft)*(.13+.87*max(normalize(lampLeft-pos).y,0.));beam+=headlightBeam(pos-lampRight)*(.13+.87*max(normalize(lampRight-pos).y,0.));}
+  return sqrt(lit*lit+base*vec3(.92,.96,1.)*beam*occlusion*.48);
 }
 vec3 groundHaze(vec3 c,vec3 pos){float d=length(pos.xz-eye.xz);float haze=1.-exp(-d*.0019);float toward=dot(normalize(pos.xz-eye.xz),normalize(sunDirection.xz+vec2(.0001)))*.5+.5;
   vec3 fog=mix(vec3(.031,.041,.053),vec3(.57,.67,.64),daylight);
@@ -30,7 +31,7 @@ vec3 groundHaze(vec3 c,vec3 pos){float d=length(pos.xz-eye.xz);float haze=1.-exp
 export class Terrain{
   constructor(scene,mobile){
     this.torchLevel=0;this.lastTime=0;
-    this.u={daylight:{value:1},twilight:{value:0},moonlight:{value:0},clockTime:{value:0},torch:{value:0},forward:{value:new THREE.Vector3()},sunDirection:{value:new THREE.Vector3()},eye:{value:new THREE.Vector3()},grassOrigin:{value:new THREE.Vector2()},grassExtent:{value:55}};
+    this.u={...vehicleLightUniforms(),daylight:{value:1},twilight:{value:0},moonlight:{value:0},clockTime:{value:0},torch:{value:0},forward:{value:new THREE.Vector3()},sunDirection:{value:new THREE.Vector3()},eye:{value:new THREE.Vector3()},grassOrigin:{value:new THREE.Vector2()},grassExtent:{value:55}};
     const geometry=new THREE.PlaneGeometry(16000,16000,1,1);geometry.rotateX(-Math.PI/2);
     const mat=new THREE.ShaderMaterial({uniforms:this.u,toneMapped:false,extensions:{derivatives:true},vertexShader:`varying vec3 vWorld;void main(){vWorld=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(vWorld,1.);}`,
     fragmentShader:`varying vec3 vWorld;${common}
@@ -107,5 +108,5 @@ export class Terrain{
       }`});
     this.grass=new THREE.Mesh(geo,mat);this.grass.frustumCulled=false;scene.add(this.grass);this.maxBlades=count;
   }
-  update(camera,sky,t,state={}){const dt=Math.min(.05,Math.max(0,t-this.lastTime))||.016;this.lastTime=t;this.torchLevel+=((state.flashlight?1:0)-this.torchLevel)*(1-Math.exp(-dt*13));this.u.torch.value=this.torchLevel;camera.getWorldDirection(this.u.forward.value);this.u.eye.value.copy(camera.position);this.u.sunDirection.value.copy(sky.sun);this.u.daylight.value=sky.day;this.u.twilight.value=sky.twilight;this.u.moonlight.value=sky.moonlight;this.u.clockTime.value=t;}
+  update(camera,sky,t,state={}){const dt=Math.min(.05,Math.max(0,t-this.lastTime))||.016;this.lastTime=t;updateVehicleLightUniforms(this.u,state.vehicleLighting);this.torchLevel+=((state.flashlight?1:0)-this.torchLevel)*(1-Math.exp(-dt*13));this.u.torch.value=this.torchLevel;camera.getWorldDirection(this.u.forward.value);this.u.eye.value.copy(camera.position);this.u.sunDirection.value.copy(sky.sun);this.u.daylight.value=sky.day;this.u.twilight.value=sky.twilight;this.u.moonlight.value=sky.moonlight;this.u.clockTime.value=t;}
 }

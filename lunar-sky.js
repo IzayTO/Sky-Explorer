@@ -1,5 +1,5 @@
 import * as THREE from './three.module.js';
-import {clamp,smooth} from './sky.js?v=2.1';
+import {clamp,smooth} from './sky.js?v=2.2';
 const TAU=Math.PI*2,UP=new THREE.Vector3(0,1,0);
 export const LUNAR_DAY=29.53059,MOON_GRAVITY=1.62;
 const eq=(ra,de)=>new THREE.Vector3(Math.cos(de*Math.PI/180)*Math.cos(ra*Math.PI/180),Math.sin(de*Math.PI/180),Math.cos(de*Math.PI/180)*Math.sin(ra*Math.PI/180));
@@ -87,7 +87,7 @@ export class LunarSky{
     const skyFraction=1-groundFraction,litGround=smooth(-.025,.08,this.sun.y)*smooth(.015,.29,groundFraction);
     // About 99% of dark recovery in one second; faster glare suppression.
     // This is an intentionally accelerated viewing effect, not biological time.
-    const darkness=clamp(1-Math.max(solar,litGround*.985,planet*.68,state.flashlight?(1-skyFraction)*.6:0));
+    const darkness=clamp(1-Math.max(solar,litGround*.985,planet*.68,state.headlightExposure||0,state.flashlight?(1-skyFraction)*.6:0));
     const tau=darkness < this.adaptation ? .13 : .217;this.adaptation+=(darkness-this.adaptation)*(1-Math.exp(-dt/tau));
     this.night=this.adaptation;this.day=1-smooth(-.02,.02,-this.sun.y);this.moonlight=this.earthshine;this.twilight=0;
     const u=this.u;u.night.value=Math.pow(this.adaptation,1.2);u.moonlight.value=0;u.milkyOn.value=state.milky?1:0;u.time.value=t;u.pixelRatio.value=pixelRatio;u.zoomReveal.value=state.zoomReveal;u.starLimit.value=1.1+7.8*this.adaptation+1.75*Math.pow(state.zoomReveal,.78);u.solarVisible.value=sunSight;u.earthIllumination.value=this.illumination;u.earthSpin.value=(state.hour/24*29)%1;
