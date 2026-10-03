@@ -68,3 +68,35 @@ NASA que ya contenía Tierra (moon.jpg, LROC) se conserva sin cambios.
 La cámara, física, linterna y shaders lunares son código local. Las imágenes
 VRChat del usuario se usaron como referencia visual; no se copiaron modelos,
 banderas, naves, texturas ni otros recursos de esos mundos.
+
+EXPEDICIÓN 3.0 — referencias adicionales
+
+Map-desing de IzayTO:
+https://github.com/IzayTO/Map-desing
+Referencia conceptual de piezas procedurales, ajuste modular y serialización.
+Los nuevos modelos y controles de Sky están implementados como módulos propios,
+sin importar el editor, TransformControls ni modelos de terceros.
+
+NASA/JPL Solar System Dynamics — Approximate Positions of the Planets:
+https://ssd.jpl.nasa.gov/planets/approx_pos.html
+Elementos orbitales y tasas de la Tabla 1, intervalo 1800–2050; solución de Kepler.
+Se omiten correcciones de tiempo de luz, paralaje lunar y observador topocéntrico.
+La orientación final y el tamaño visible de discos son decisiones de juego.
+
+F. J. Ballesteros (2012), New insights into black bodies:
+https://arxiv.org/abs/1201.1809
+Estimación de temperatura efectiva a partir del índice B−V. La clase mostrada
+es una aproximación térmica, no una clasificación espectroscópica observada.
+
+NASA Science — Moon composition y Moonquakes:
+https://science.nasa.gov/moon/composition/
+https://science.nasa.gov/moon/moonquakes/
+Referencia educativa para fichas de regolito y vibraciones lunares simuladas.
+
+NASA Science — Electromagnetic spectrum / Energy to image:
+https://science.nasa.gov/ems/
+https://science.nasa.gov/ems/04_energytoimage/
+Referencia educativa del espectro y falso color. Los filtros aquí son efectos
+ilustrativos del render visible; no contienen imágenes científicas multibanda.
+Los sonidos del receptor y los valores ambientales son sintetizados/simulados.
+Los instrumentos y props añadidos son geometría procedural propia.

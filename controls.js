@@ -63,10 +63,11 @@ export class Walker{
     const targetX=(Math.sin(this.yaw)*f+Math.cos(this.yaw)*s)*2.05*this.speed*(sprint?2.25:1),targetZ=(-Math.cos(this.yaw)*f+Math.sin(this.yaw)*s)*2.05*this.speed*(sprint?2.25:1);
     const response=1-Math.exp(-dt*11);this.velocity.x+=(targetX-this.velocity.x)*response;this.velocity.y+=(targetZ-this.velocity.y)*response;
     let nx=this.pos.x+this.velocity.x*dt,nz=this.pos.z+this.velocity.y*dt;const r=Math.hypot(nx,nz),limit=600;if(r>limit){nx*=limit/r;nz*=limit/r;if(performance.now()-this.boundaryAt>5500){this.boundaryAt=performance.now();this.onBoundary?.();}}
+    if(this.resolveMovement){const resolved=this.resolveMovement(nx,nz);nx=resolved.x;nz=resolved.z;}
     let walked=Math.hypot(nx-this.pos.x,nz-this.pos.z);
     const previousGround=this.groundHeight(this.pos.x,this.pos.z),nextGround=this.groundHeight(nx,nz);
     // Walkable slopes; an abrupt ledge cannot push the capsule up a wall.
-    if(nextGround-previousGround>Math.max(.18,walked*1.15)&&nextGround>this.pos.y-1.42){nx=this.pos.x;nz=this.pos.z;walked=0;this.velocity.multiplyScalar(.3);}
+    if(nextGround-previousGround>Math.max(.26,walked*1.15)&&nextGround>this.pos.y-1.42){nx=this.pos.x;nz=this.pos.z;walked=0;this.velocity.multiplyScalar(.3);}
     this.pos.x=nx;this.pos.z=nz;const floor=this.groundHeight(nx,nz);
     if(this.jumpQueued&&this.grounded&&this.enabled){this.verticalSpeed=3.25;this.grounded=false;this.onJump?.();}this.jumpQueued=false;
     if(this.grounded){if(this.pos.y-1.68-floor>.32){this.grounded=false;this.verticalSpeed=0;}else this.pos.y=floor+1.68;}

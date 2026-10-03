@@ -1,4 +1,5 @@
 import * as THREE from './three.module.js';
+import {worldLightGLSL,worldUniforms} from './world-lighting.js?v=3.0';
 import {flashlightGLSL,vehicleLightGLSL,vehicleLightUniforms,updateVehicleLightUniforms} from './flashlight.js?v=2.3';
 
 // Original, locally authored geometry. Static details are merged into one draw;
@@ -30,21 +31,21 @@ class Parts{
   mesh(material){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(this.p,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(this.n,3));g.setAttribute('paintColor',new THREE.Float32BufferAttribute(this.c,3));g.setAttribute('emission',new THREE.Float32BufferAttribute(this.e,1));g.computeBoundingSphere();return new THREE.Mesh(g,material);}
 }
 function vehicleMaterial(){
-  const uniforms={...vehicleLightUniforms(),sun:{value:V(0,1,0)},earth:{value:V(0,1,0)},earthPower:{value:0},day:{value:1},lunar:{value:0},eye:{value:V(0,0,0)},forward:{value:V(0,0,-1)},torch:{value:0},sunVisibility:{value:1}};
+  const uniforms={...worldUniforms(),...vehicleLightUniforms(),sun:{value:V(0,1,0)},earth:{value:V(0,1,0)},earthPower:{value:0},day:{value:1},lunar:{value:0},eye:{value:V(0,0,0)},forward:{value:V(0,0,-1)},torch:{value:0},sunVisibility:{value:1}};
   return new THREE.ShaderMaterial({uniforms,toneMapped:false,vertexShader:`
     attribute vec3 paintColor;attribute float emission;varying vec3 vWorld,vNormal,vPaint;varying float vEmission;
     void main(){vWorld=(modelMatrix*vec4(position,1.)).xyz;vNormal=normalize(mat3(modelMatrix)*normal);vPaint=paintColor;vEmission=emission;gl_Position=projectionMatrix*viewMatrix*vec4(vWorld,1.);}`,
     fragmentShader:`varying vec3 vWorld,vNormal,vPaint;varying float vEmission;
     uniform vec3 sun,earth,eye,forward;uniform float earthPower,day,lunar,torch,sunVisibility;
-    ${flashlightGLSL}${vehicleLightGLSL}
+    ${flashlightGLSL}${vehicleLightGLSL}${worldLightGLSL}
     void main(){vec3 n=normalize(vNormal),view=normalize(eye-vWorld);float ndl=max(0.,dot(n,sun));
       vec3 ambient=mix(vec3(.009,.014,.021)+vec3(.17)*day,vec3(.00004),lunar);
-      vec3 light=ambient+vec3(1.,.96,.86)*ndl*sunVisibility*mix(day*.8,1.35,lunar)
+      vec3 light=ambient+vec3(1.,.96,.86)*ndl*sunVisibility*mix(day*.8,1.35,lunar)*baseVisibility(vWorld+n*.03,sun,150.)
         +vec3(.46,.63,1.)*max(0.,dot(n,earth))*earthPower;
       if(torch>.001){vec3 d=eye-vWorld;light+=vec3(.92,.96,1.)*flashlightBeam(-d,forward)*torch*(.10+.90*max(0.,dot(n,normalize(d))));}
       if(lampMode>.001){light+=vec3(.92,.96,1.)*(headlightBeam(vWorld-lampLeft)+headlightBeam(vWorld-lampRight))*.15;}
       float spec=pow(max(0.,dot(n,normalize(sun+view))),40.)*ndl*sunVisibility*mix(day,1.,lunar);
-      vec3 color=vPaint*light+vec3(spec*.07);
+      light+=baseLighting(vWorld,n);vec3 color=vPaint*light+vec3(spec*.07);
       if(vEmission>0.)color+=vPaint*vEmission*min(lampMode,1.)*2.4;
       if(vEmission<0.)color+=vec3(1.,.012,.003)*(-vEmission)*reverseLight*2.8;
       gl_FragColor=vec4(pow(max(color,vec3(0.)),vec3(1./2.2)),1.);

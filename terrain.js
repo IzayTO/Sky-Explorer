@@ -1,10 +1,11 @@
 import * as THREE from './three.module.js';
+import {worldLightGLSL,worldUniforms} from './world-lighting.js?v=3.0';
 import {flashlightGLSL,vehicleLightGLSL,vehicleLightUniforms,updateVehicleLightUniforms} from './flashlight.js?v=2.3';
 // Continuous flat ground, with nearby instanced grass. The shader shades distant
 // detail analytically: no tiling photograph, loaded model, shadow atlas or edge.
 const common=`
 uniform float daylight,twilight,moonlight,clockTime,torch;uniform vec3 sunDirection,eye,forward;
-${flashlightGLSL}${vehicleLightGLSL}
+${flashlightGLSL}${vehicleLightGLSL}${worldLightGLSL}
 float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
 vec3 illumination(vec3 base,float occlusion){
@@ -17,11 +18,11 @@ vec3 illumination(vec3 base,float occlusion){
   return lit;
 }
 vec3 torchLight(vec3 lit,vec3 base,vec3 pos,float occlusion){
-  lit*=mix(1.,vehicleOcclusion(pos+vec3(0.,.004,0.),sunDirection),daylight*.82);
+  lit*=mix(1.,vehicleOcclusion(pos+vec3(0.,.004,0.),sunDirection)*baseVisibility(pos+vec3(0.,.03,0.),sunDirection,150.),daylight*.82);
   float beam=0.;
   if(torch>.001)beam=flashlightBeam(pos-eye,forward)*torch*(.12+.88*max(normalize(eye-pos).y,0.));
   if(lampMode>.001){beam+=headlightBeam(pos-lampLeft)*(.13+.87*max(normalize(lampLeft-pos).y,0.));beam+=headlightBeam(pos-lampRight)*(.13+.87*max(normalize(lampRight-pos).y,0.));}
-  return sqrt(lit*lit+base*(vec3(.92,.96,1.)*beam+vec3(1.,.009,.002)*rearBeam(pos))*occlusion*.48);
+  return sqrt(lit*lit+base*(vec3(.92,.96,1.)*beam+vec3(1.,.009,.002)*rearBeam(pos)+baseLighting(pos,vec3(0.,1.,0.)))*occlusion*.48);
 }
 vec3 groundHaze(vec3 c,vec3 pos){float d=length(pos.xz-eye.xz);float haze=1.-exp(-d*.0019);float toward=dot(normalize(pos.xz-eye.xz),normalize(sunDirection.xz+vec2(.0001)))*.5+.5;
   vec3 fog=mix(vec3(.031,.041,.053),vec3(.57,.67,.64),daylight);
@@ -31,7 +32,7 @@ vec3 groundHaze(vec3 c,vec3 pos){float d=length(pos.xz-eye.xz);float haze=1.-exp
 export class Terrain{
   constructor(scene,mobile){
     this.torchLevel=0;this.lastTime=0;
-    this.u={...vehicleLightUniforms(),daylight:{value:1},twilight:{value:0},moonlight:{value:0},clockTime:{value:0},torch:{value:0},forward:{value:new THREE.Vector3()},sunDirection:{value:new THREE.Vector3()},eye:{value:new THREE.Vector3()},grassOrigin:{value:new THREE.Vector2()},grassExtent:{value:55}};
+    this.u={...worldUniforms(),...vehicleLightUniforms(),buildMask:{value:null},buildMaskOrigin:{value:new THREE.Vector2()},daylight:{value:1},twilight:{value:0},moonlight:{value:0},clockTime:{value:0},torch:{value:0},forward:{value:new THREE.Vector3()},sunDirection:{value:new THREE.Vector3()},eye:{value:new THREE.Vector3()},grassOrigin:{value:new THREE.Vector2()},grassExtent:{value:55}};
     const geometry=new THREE.PlaneGeometry(16000,16000,1,1);geometry.rotateX(-Math.PI/2);
     const mat=new THREE.ShaderMaterial({uniforms:this.u,toneMapped:false,extensions:{derivatives:true},vertexShader:`varying vec3 vWorld;void main(){vWorld=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(vWorld,1.);}`,
     fragmentShader:`varying vec3 vWorld;${common}
@@ -99,9 +100,9 @@ export class Terrain{
       geo.boundingBox=new THREE.Box3(new THREE.Vector3(-.15,-.03,-.15),new THREE.Vector3(6.15,.60,6.15));geo.boundingSphere=new THREE.Sphere(new THREE.Vector3(3,.28,3),4.48);return geo;
     });
     const mat=new THREE.ShaderMaterial({uniforms:this.u,side:THREE.DoubleSide,toneMapped:false,vertexShader:`
-      attribute vec2 offset;attribute vec4 shape;uniform vec2 grassOrigin;uniform vec3 eye;uniform float clockTime;varying vec3 vWorld;varying float vHeight,vSeed;
+      attribute vec2 offset;attribute vec4 shape;uniform sampler2D buildMask;uniform vec2 buildMaskOrigin;uniform vec2 grassOrigin;uniform vec3 eye;uniform float clockTime;varying vec3 vWorld;varying float vHeight,vSeed;
       void main(){vec2 xz=(modelMatrix*vec4(offset.x,0.,offset.y,1.)).xz;
-        float distance=length(xz-eye.xz);float fade=1.-smoothstep(12.,18.,distance);
+        float distance=length(xz-eye.xz);float fade=1.-smoothstep(12.,18.,distance);vec2 buildUV=(xz-buildMaskOrigin)/64.;if(min(min(buildUV.x,buildUV.y),min(1.-buildUV.x,1.-buildUV.y))>0.)fade*=1.-texture2D(buildMask,buildUV).r;
         vec3 p=position;float h=p.y;float sway=sin(clockTime*.75+xz.x*.13+xz.y*.21)*.045+sin(clockTime*1.8+xz.y*.39)*.012;
         p.x*=shape.x;p.y*=shape.y*fade;p.z=(h*h)*(.06+sway)*fade;
         float c=cos(shape.z),s=sin(shape.z);p.xz=mat2(c,-s,s,c)*p.xz;

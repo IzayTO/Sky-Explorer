@@ -1,5 +1,5 @@
 import * as THREE from './three.module.js';
-import {createVehicleModel} from './vehicle-models.js?v=2.3';
+import {createVehicleModel} from './vehicle-models.js?v=3.0';
 
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x)),damp=(a,b,k,dt)=>a+(b-a)*(1-Math.exp(-k*dt));
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
@@ -22,10 +22,11 @@ export class Vehicle{
   }
   parkAt(x,z){this.position.set(x,0,z);const ground=this.surface();this.position.y=ground.height;this.pitch=ground.pitch;this.roll=ground.roll;this.speed=0;this.verticalSpeed=0;this.grounded=true;this.applyPose(0);}
   canEnter(camera,walker){
-    if(this.mounted||!walker.enabled||!walker.grounded)return false;
-    this._point.copy(this.position);this._point.y+=.7;this._point.sub(camera.position);
-    const distance=this._point.length();if(distance>4.25||distance<.25)return false;
-    return true;
+    if(this.mounted||walker.driver||!walker.enabled||!walker.grounded)return false;
+    const dx=camera.position.x-this.position.x,dz=camera.position.z-this.position.z,c=Math.cos(this.heading),s=Math.sin(this.heading);
+    const x=c*dx+s*dz,z=-s*dx+c*dz,hx=this.model.track*.5+.2,hz=this.model.wheelbase*.5+.3;
+    const outside=Math.hypot(Math.max(0,Math.abs(x)-hx),Math.max(0,Math.abs(z)-hz));
+    return outside<=1.4&&Math.abs(camera.position.y-1.68-this.position.y)<1.5;
   }
   promptPosition(target){return this.root.localToWorld(target.set(this.lunar?-.1:0,1.12,this.lunar?.04:.20));}
 

@@ -1,188 +1,188 @@
-A CIELO ABIERTO — PARCHE 2.3
-Inventario, conducción y pulido visual
+A CIELO ABIERTO — EXPEDICIÓN 3.0
+Parche incremental para la versión actual de IzayTO/Sky-Explorer (base 2.3).
 
-INSTALACIÓN SOBRE LA VERSIÓN 2.2
+INSTALACIÓN
 
-Este ZIP contiene 13 archivos sueltos, sin carpetas.
-Descomprímelo y coloca los archivos junto a tu index.html actual.
+Este ZIP contiene 19 archivos sueltos, sin carpetas: 8 nuevos y 11 reemplazos.
+Ponlos junto al index.html del proyecto existente. Conserva todos los demás
+archivos, especialmente texturas, sonidos, catálogo estelar, motor y licencias.
+No borres la carpeta del proyecto ni sustituyas el proyecto entero por el ZIP.
+No se publicó ni se cambió nada en GitHub.
 
-AÑADE estos 2 archivos nuevos:
-  inventory.js
-  vehicle-sound.js
+AÑADE ESTOS 8 ARCHIVOS
+  items.js
+  props.js
+  build-world.js
+  expedition.js
+  science.js
+  celestial.js
+  world-lighting.js
+  lunar-light-cache.js
 
-REEMPLAZA estos 11 archivos:
+REEMPLAZA ESTOS 11 ARCHIVOS
   index.html
   styles.css
   app.js
   controls.js
-  sky.js
+  inventory.js
+  vehicles.js
+  vehicle-models.js
   terrain.js
   lunar-terrain.js
-  flashlight.js
-  vehicle-models.js
-  vehicles.js
+  CREDITOS.txt
   LEEME.txt
 
-Conserva todos los demás archivos de la versión 2.2. Este es un parche;
-no abre por sí solo en una carpeta vacía. No se incluye ni se modifica
-ninguna textura: earth.jpg, moon.jpg, lunar-height.png y regolith.jpg
-siguen siendo los que tienes. También conservas three.module.js,
-lunar-sky.js, sound.js, lunar-sound.js, star-catalog.js y sus créditos.
-Tu mapa personalizado de la Tierra se sigue utilizando.
+Después de subirlos manualmente, recarga la página. Las importaciones de los
+archivos modificados usan v=3.0 para renovar la caché del navegador.
+La aplicación conserva sus recursos locales; no requiere instalar paquetes.
 
-No necesitas instalar dependencias ni compilar. Sube los archivos
-individuales descomprimidos a la misma ubicación de los anteriores.
-Tras tu publicación habitual, recarga con Ctrl+Shift+R o abre una pestaña
-nueva en el teléfono si el navegador sigue mostrando la interfaz anterior.
+CONTROLES
 
-CONTROLES EN COMPUTADORA
+Escritorio: WASD para caminar/conducir; Espacio para saltar; Shift mantenido
+para sprint/boost; F para linterna/faros; E para entrar, salir o interactuar.
+Los controles anteriores de mirar y telescopio se conservan.
+B abre la mochila; C abre el catálogo; J abre el cuaderno.
+1–9 y 0 seleccionan las diez casillas de acceso rápido.
+Con una pieza seleccionada: clic/acción coloca; R gira 90 grados sobre el eje
+seleccionado; Supr recupera la pieza apuntada; Ctrl+Z deshace; Ctrl+Y rehace.
 
-  W / S o flechas arriba / abajo : avanzar / retroceder.
-  A / D                         : desplazarse a pie; dirigir al conducir.
-  Flechas izquierda / derecha   : girar (Q también permite girar a izquierda).
-  Espacio                       : saltar a pie o con el vehículo.
-  Mantener Shift                : correr a pie; boost al avanzar en vehículo.
-  Soltar Shift                  : dejar de aplicar boost.
-  F                             : linterna; en vehículo, apagados/bajas/altas.
-  E                             : sentarse o bajar. Sustituye a R.
-  B                             : abrir o cerrar la mochila.
-  1–9 y 0                       : seleccionar las 10 casillas de acceso rápido.
-  T                             : telescopio.
-  H                             : ocultar / mostrar interfaz.
-  M                             : silenciar / activar sonido.
-  Arrastrar                     : mirar libremente.
-  Doble clic                    : capturar el ratón; Esc para liberarlo.
-  Esc                           : cerrar mochila, ajustes o telescopio.
+Móvil horizontal: joystick izquierdo; mirada arrastrando el paisaje; acciones
+con el pulgar derecho. Se mantiene la captura independiente de varios dedos.
+La mochila y el libro abren sus interfaces; estas pausan la entrada de movimiento
+para no conducir/caminar mientras arrastras objetos. La física de objetos
+lanzados sigue avanzando.
 
-Dentro del telescopio, 0–3 conservan sus atajos de aumento. Con el
-inventario abierto, esos números seleccionan las casillas de acceso rápido.
-No hay joystick ni botones táctiles de salto, sprint o linterna en escritorio.
+MOCHILA Y CATÁLOGO
 
-TELÉFONO, ESPECIALMENTE EN HORIZONTAL
+30 casillas principales más 10 accesos rápidos, separados visualmente.
+42 objetos del catálogo en cinco categorías y dos tipos de muestras recogibles.
+Una casilla guarda únicamente identificador y cantidad, no modelos 3D ocultos.
 
-Joystick a la izquierda; salto, luz y correr/boost a la derecha.
-Mantén presionado el rayo mientras avanzas para usar boost. Al soltarlo
-se deja de aplicar. Puedes mirar arrastrando desde los botones de acción
-sin soltar el joystick. Cada dedo conserva su propio control; abrir un
-panel, cambiar de ventana o cancelar un toque libera los botones retenidos.
+Toca un objeto del catálogo para añadirlo o arrástralo a una casilla concreta.
+La cantidad creativa se elige de 1 a 30. Arrastra entre casillas para mover,
+intercambiar o fusionar. Al fusionar, el máximo es 30; el exceso de un stack
+existente permanece en su casilla de origen. Una pulsación larga o clic derecho
+abre cantidad, rellenar, dividir, acceso rápido y vaciar.
 
-La mochila queda junto a las acciones del pulgar derecho. Las diez casillas
-rápidas están abajo, en el centro. Toca una para seleccionarla.
-La línea temporal está arriba y la brújula queda justo debajo, también
-cuando pliegas el ciclo. Telescopio, entrada/salida y acciones tienen zonas
-separadas. Los márgenes se adaptan a las áreas seguras del teléfono.
+Arrastrar fuera de la ventana lanza el stack al mundo con velocidad y gravedad,
+sin teletransportarlo al suelo. Cierra pronto la mochila para verlo caer.
+Acércate y usa Recoger/E para devolverlo a la mochila. No se recoge si no cabe.
+Las cajas colocadas permiten guardar diez stacks adicionales cada una.
 
-INVENTARIO
+CONSTRUCCIÓN
 
-30 casillas principales vacías + 10 casillas de acceso rápido = 40 espacios.
-Dentro de la mochila aparecen en dos grupos, separados visualmente.
-Las diez de acceso rápido son las mismas de la barra inferior, no otras diez.
-La selección se refleja en ambas vistas y se mantiene durante la sesión.
-Por ahora no hay objetos, mano, equipamiento, arrastre ni fabricación.
+Selecciona una pieza en el acceso rápido. Su fantasma indica dónde irá:
+verde si cabe; rojizo y mensaje si la colocación no es válida.
+El botón de giro cambia 90 grados, con selector de eje. Las piezas tienen tamaños
+fijos; no hay escalado libre ni controles XYZ del editor de mapas.
+Hay pisos de tres tamaños, paneles completos/medios/bajos, ventanas, acceso,
+esquina, columnas, cubiertas, barandales, escaleras y rampa.
+El ajuste acerca bordes y centros modulares; apliques/repisas se fijan a paredes
+y luminarias de techo debajo de cubiertas. El piso oculta el césped de su huella;
+al recuperarlo el césped reaparece.
 
-Abrir la mochila oculta e inhabilita los controles que podrían superponerse,
-libera el movimiento y deja utilizar el diálogo sin mover la cámara.
-Ciérrala con la X, B, Esc o tocando el fondo fuera del panel.
-Los espacios vacíos admiten navegación con Tab; la selección rápida también
-se puede cambiar con el teclado. Al cerrar se recuperan los controles.
+En la Luna, primero coloca un cimiento que abarque la construcción. Su ancho y
+fondo se ajustan entre 2 y 24 m en pasos de 2 m; su cara superior queda horizontal
+y su cuerpo se prolonga por debajo de la pendiente. Es sólido y caminable.
+Usa escaleras/rampa si queda elevado. Las piezas estructurales necesitan estar
+sobre su huella. Recupera primero las piezas apoyadas para quitar un cimiento.
+En Tierra no se exige cimiento. Los mismos objetos sirven en ambos mundos.
 
-VEHÍCULOS E INTERACCIÓN
+Deshacer/rehacer conserva los objetos no relacionados que hayas añadido a la
+mochila. Rehacer necesita la unidad correspondiente y deshacer necesita espacio
+para devolverla. Las cajas deben vaciarse antes de recuperarlas.
 
-Se conserva la cuatrimoto Sendero en Tierra y el rover Selene de dos asientos
-en Luna. El segundo asiento sigue siendo visual: experiencia de un jugador.
-No se ha reconstruido el rover completo. Se corrigió únicamente su antena:
-reflector parabólico con cara frontal y respaldo, borde, receptor y soportes
-alineados. Su cuerpo se ve desde ambos lados, sin dejar varillas flotantes.
+INTERACCIONES Y LUCES
 
-El círculo para sentarse se ancla a un punto del vehículo. Su proyección
-se actualiza en cada cuadro con la misma cámara que dibuja la escena y
-sin transición de posición; el icono siempre se ve de frente.
-Aparece al acercarte desde cualquier lado cuando ese punto entra en la
-pantalla. Ya no exige centrar el vehículo en un cono estrecho de mirada.
-Toca el icono o pulsa E. Para bajar, usa E o el botón de salida.
-Si estás en el aire, primero aterriza; la salida busca suelo junto al chasis.
+Sillas/bancos: icono a 0,5 m del objeto; vehículos: 1,4 m desde su contorno.
+El indicador permanece anclado al objeto y su proyección se actualiza cada
+fotograma. E o el botón sirven para sentarse y levantarse, con mirada libre.
+Otros aparatos utilizan el mismo sistema de proximidad e interacción.
 
-BOOST
+Lámparas: encendido y temperaturas cálida 2700 K, neutra 4000 K y fría 6500 K.
+Todas conservan su material luminoso; hasta cuatro lámparas próximas iluminan
+realmente el entorno. Los obstáculos de construcción cercanos atenúan la luz.
+Paneles solares y módulos de energía habilitan aparatos avanzados a 18 m,
+sin cables, combustible ni mantenimiento.
 
-Funciona mientras mantienes Shift o el rayo y avanzas. No hay temporizador,
-recarga ni consumo de combustible. Al soltar, cesa el impulso y el vehículo
-reduce su velocidad progresivamente hasta la normal, sin un frenazo artificial.
-El límite de velocidad con boost es 2,6 veces el normal; la aceleración al
-impulsar es 3,4 veces mayor. La dirección se modera a alta velocidad para
-mantener el control. Reversa y salto conservan sus controles.
+OBSERVACIÓN E INVESTIGACIÓN
 
-La gravedad y el impulso vertical anteriores permanecen: 9,80665 m/s² en
-Tierra y 1,62 m/s² en Luna. La física usa pasos cortos para las caídas y el
-contacto con el terreno. Conducción y suspensión siguen siendo aproximaciones
-ligeras para la experiencia, no una simulación mecánica completa.
+Telescopio de piso: colócalo, acércate y usa Mirar/E. La vista parte del ocular
+físico y sigue la orientación del tubo. La geometría del mundo puede tapar el
+cielo: paredes y techos siguen apareciendo en el ocular. Al salir, el instrumento
+conserva la dirección elegida. En su último aumento los siete planetas distintos
+de la Tierra muestran discos ilustrativos; Saturno incluye anillos. A simple
+vista y con el telescopio manual siguen siendo puntos.
 
-LUCES, SOMBRAS Y LUNA ATMOSFÉRICA
+Identificador: apunta a un astro y mantén acción/clic para registrarlo.
+Analizador espectral: muestra color B−V, temperatura/clase aproximadas y una
+curva térmica orientativa de una estrella del catálogo.
+Telémetro: apunta a suelo, construcción o vehículo para leer la distancia.
+Recolector: mira suelo natural cercano para obtener suelo/regolito.
+Mesa de análisis: con energía cercana, consume una muestra y registra su ficha.
+Sismómetro: registra una señal simulada, identificada como tal.
+Antena: con energía, sintoniza ejemplos de señal a 32 MHz, 400 MHz y 160 GHz.
+Cámara: guarda una captura pequeña y los datos de observación en el cuaderno.
+Escritorio/cuaderno: abre los registros, exportación e importación.
+Baliza: asigna un nombre para verla discretamente en la dirección correspondiente.
+Estación meteorológica: valores ambientales simulados para Tierra; en la Luna
+informa de la ausencia de atmósfera terrestre.
 
-Ambos vehículos tienen dos luces rojas traseras al retroceder. Encienden y
-apagan con una transición breve y suave al empezar o dejar de dar reversa.
-Su resplandor ilumina el suelo posterior; en Luna lo oculta el relieve.
-Funcionan independientemente de que los faros delanteros estén apagados,
-en bajas o en altas. Los faros delanteros conservan su estado.
+Filtros del telescopio de piso:
+  Visible: inicial.
+  Infrarrojo: observar/identificar la Luna.
+  Ultravioleta: identificar tres estrellas distintas.
+  Radio/microondas: registrar una señal de la antena.
+  Rayos X: analizar una muestra de regolito.
+  Gamma: completar los cuatro descubrimientos anteriores.
+Los filtros avanzados requieren energía cercana. Son tratamientos didácticos
+en falso color del render visible, no mapas de emisiones ni detectores físicos.
 
-Las sombras del vehículo ahora incluyen volúmenes de las ruedas y siguen
-la inclinación del chasis. Se separó el origen de esta sombra del muestreo
-más elevado del relieve, que desplazaba mucho la sombra cerca del horizonte.
-Son sombras geométricas aproximadas, sin un pase adicional de mapas de sombra.
-La silueta de cada pieza pequeña no se simula individualmente.
+CIELO Y FUENTES
 
-En el modo Atmosférica, la parte sin luz de la Luna ya no vuelve a dibujar
-un fondo distinto: se mezcla con el cielo existente sin anillo ni borde
-circular en la zona oscura, incluso con el telescopio. La creciente conserva
-su textura y un terminador suave. Disco sólido conserva la esfera oscura.
-La preferencia y las fases siguen en Ajustes > Cielo.
+Los siete planetas se calculan con elementos orbitales aproximados de JPL
+para la fecha seleccionable (1800–2050). Se usa la aproximación geocéntrica
+para ambos mundos, sin paralaje Tierra-Luna. El catálogo estelar original se
+conserva; nombres conocidos se vinculan a sus coordenadas y el resto muestra
+su referencia por ascensión recta. Los puntos decorativos no reciben nombres.
 
-SONIDOS
+Estrellas y planetas se orientan conjuntamente para encajar con el Sol del ciclo
+jugable existente. No es un planetario para una latitud/longitud real. Los discos
+aumentados de los planetas son representaciones estilizadas para jugabilidad.
+La temperatura estelar se estima a partir de B−V, no es una medición espectral.
+Las composiciones de muestras, señales sísmicas/radio y clima son educativos.
+Las fuentes y sus enlaces están en CREDITOS.txt.
 
-El vehículo estacionado sin conductor no mantiene un motor sonando.
-Al subir hay un encendido suave y un ralentí discreto. Al comenzar a avanzar,
-la carga del motor entra gradualmente; su tono y rodadura siguen la velocidad,
-el acelerador y el boost. La reversa también mueve el motor. El contacto al
-aterrizar tiene un golpe amortiguado. Cambiar los faros produce un clic breve.
-Al bajar, el motor se desvanece y se liberan sus fuentes de audio.
+GUARDADO
 
-Son sonidos sintetizados localmente, con tonos filtrados y ruido tenue:
-no se descargan grabaciones, no hay pitido continuo de reversa ni bocina.
-Comparten el control de volumen, silencio y pausa del ambiente. En Luna
-representan vibración percibida a bordo, no sonido propagándose por el vacío.
+Bases de Tierra y Luna, mochila, objetos lanzados y cuaderno se guardan localmente
+en el navegador. Cambiar de dispositivo/navegador no transfiere esos datos.
+Desde J/cuaderno puedes exportar e importar una expedición JSON. La importación
+pide confirmar el reemplazo de las bases/mochila/cuaderno actuales y ofrece
+exportar antes. El historial de deshacer es de la sesión, no del archivo.
+Los modelos se reconstruyen a partir de tipo, posición, rotación y parámetros.
+No se guardan mallas completas. Las capturas son pequeñas para limitar espacio.
 
-RENDIMIENTO Y COMPROBACIÓN
+RENDIMIENTO LUNAR
 
-El césped conserva sus 32.000 / 48.000 instancias periódicas según dispositivo,
-su densidad, forma, viento y radio de visibilidad. Se organiza en sectores:
-solo se envían a dibujar los que intersectan la vista de la cámara. El cálculo
-usa el FOV actual, incluido el telescopio, y se actualiza al girar o avanzar.
-Los sectores que cruzan un borde de la pantalla conservan un margen para
-las hojas y el viento; no se recortan bruscamente las briznas del borde.
+El relieve, las texturas, las estrellas y las luces existentes se conservan.
+La visibilidad del Sol y la Tierra sobre el suelo cercano se calcula en una
+caché de iluminación anclada al terreno y se reutiliza al mirar alrededor.
+Se actualiza al recorrer otra zona o cambiar las direcciones de las luces;
+fuera de esa zona permanece el cálculo original. Los faros/linterna móviles
+mantienen su sombreado dinámico. El césped mantiene el descarte por el FOV.
+Los nuevos props comparten geometría cuando es posible y cada uno combina
+sus piezas en una sola malla. Las luces de bases tienen presupuesto acotado.
 
-Se reutilizan buffers, geometrías y temporales de conducción. Los modelos
-siguen usando seis llamadas de dibujo cada uno, incluida la antena reparada.
-El indicador de sentarse no reconstruye iconos cada cuadro. Los sonidos no
-crean nodos nuevos continuamente al conducir y se apagan al estacionar.
-Las dos luces delanteras mantienen sus haces y sombras cercanas por separado;
-a más de 18 m comparten una consulta de ocultación del relieve lunar, reduciendo
-trabajo repetido entre focos próximos. No se reduce la densidad visible del
-césped ni se eliminan estrellas, texturas, relieve o funciones del cielo.
+COMPROBACIONES Y LÍMITES
 
-Comprobación local: arranque de ambos destinos, entrada/salida con E, boost
-mantenido y liberación de punteros, luces traseras independientes, inventario
-30+10, selección sincronizada, cancelación de controles al abrir paneles,
-conservación de briznas visibles al cambiar posición/orientación/FOV,
-ciclo de vida y automatización del audio, compilación de shaders y render
-de antena, luces, sombras bajas y ambos aspectos de la Luna.
-No se han medido FPS ni se ha probado el tacto/sonido en un teléfono físico.
-El ZIP no incluye pruebas, capturas, herramientas ni dependencias de desarrollo.
-
-TEXTURA PERSONALIZADA DE LA TIERRA
-
-Sigue pudiendo reemplazarse earth.jpg con un JPEG equirectangular completo,
-proporción 2:1, norte arriba: 4096 × 2048 o 2048 × 1024 píxeles. Usa un mapa
-diurno sin sombras nocturnas pintadas. La esfera aplica luz y fases. Exporta
-como JPEG; renombrar un PNG a .jpg no convierte su formato.
-
-Los ajustes anteriores de tamaños, estrellas, telescopio y cielo se conservan.
-Créditos anteriores: CREDITOS.txt, THREE-LICENSE.txt y STARS-LICENSE.txt.
+Comprobado por pruebas de integración: arranque de ambos mundos, cantidades,
+arrastre táctil, fusión, lanzamiento/recogida, cimientos y apoyo, deshacer/rehacer,
+guardado, entrar/salir de sillas y telescopios, E/boost/salto de ambos vehículos,
+análisis, cuaderno, desbloqueos y reutilización de la caché lunar.
+Los shaders de ambos mundos, caché y nuevos objetos compilan y enlazan en el
+contexto gráfico local; las geometrías de los 44 tipos contienen datos válidos.
+La prueba de arranque/interacción usa DOM y renderer de prueba; no sustituye
+una prueba completa de render en Safari/Chrome. El navegador de comprobación
+bloqueó el acceso a localhost. No hay medición real de FPS en tu teléfono y no
+se promete una cifra concreta. Una base muy grande seguirá teniendo un coste.
