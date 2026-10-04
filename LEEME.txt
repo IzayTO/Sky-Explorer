@@ -1,50 +1,81 @@
-A CIELO ABIERTO — EXPEDICIÓN 3.0
-Parche incremental para la versión actual de IzayTO/Sky-Explorer (base 2.3).
+A CIELO ABIERTO — CORRECCIONES 3.1
+Parche incremental sobre EXPEDICIÓN 3.0.
 
 INSTALACIÓN
 
-Este ZIP contiene 19 archivos sueltos, sin carpetas: 8 nuevos y 11 reemplazos.
-Ponlos junto al index.html del proyecto existente. Conserva todos los demás
-archivos, especialmente texturas, sonidos, catálogo estelar, motor y licencias.
-No borres la carpeta del proyecto ni sustituyas el proyecto entero por el ZIP.
-No se publicó ni se cambió nada en GitHub.
+Este ZIP contiene 14 archivos sueltos, sin carpetas: 3 nuevos y 11 reemplazos.
+Usa como base tu proyecto con la actualización Expedición 3.0 ya instalada.
+Copia estos archivos junto al index.html existente y acepta reemplazar los
+nombres coincidentes. Conserva los archivos que no vienen en este ZIP.
+No se publicó ni se modificó tu repositorio en GitHub.
 
-AÑADE ESTOS 8 ARCHIVOS
-  items.js
-  props.js
-  build-world.js
-  expedition.js
-  science.js
-  celestial.js
-  world-lighting.js
-  lunar-light-cache.js
+AÑADE ESTOS 3 ARCHIVOS
+  build-gizmo.js
+  field-effects.js
+  field-guide.js
 
 REEMPLAZA ESTOS 11 ARCHIVOS
-  index.html
-  styles.css
   app.js
-  controls.js
+  build-world.js
+  celestial.js
+  expedition.js
+  index.html
   inventory.js
-  vehicles.js
-  vehicle-models.js
-  terrain.js
-  lunar-terrain.js
-  CREDITOS.txt
+  items.js
+  props.js
+  science.js
+  styles.css
   LEEME.txt
 
 Después de subirlos manualmente, recarga la página. Las importaciones de los
-archivos modificados usan v=3.0 para renovar la caché del navegador.
-La aplicación conserva sus recursos locales; no requiere instalar paquetes.
+módulos modificados y la hoja de estilo usan v=3.1 para renovar la caché.
+No necesitas instalar dependencias nuevas. Las bases, mochila y observaciones
+guardadas en la versión 3.0 conservan sus mismas claves y formato.
+
+QUÉ CAMBIA EN 3.1
+
+- Construcción: panel compacto encima de las casillas inferiores; anillos
+  tridimensionales X/Y/Z alrededor del fantasma, con giros exactos de 90°.
+- Un toque/clic breve en el paisaje termina construcción y elimina el fantasma.
+  Arrastrar para mirar lo mantiene. Se coloca exclusivamente con + o Enter.
+  Seleccionar una casilla vacía también elimina el fantasma anterior.
+- Los fantasmas no reaparecen después de cancelar ni se dibujan encima de una
+  pieza que ocupa el mismo sitio. Corrección de superficies coincidentes en
+  cimientos y marcos; pequeños detalles de acabado en mesas.
+- Cimientos: ajuste magnético a los bordes, cara superior a la misma altura y
+  relleno sólido hasta el terreno. Admite combinar tamaños distintos.
+- Catálogo móvil: deslizar verticalmente recorre los objetos; mantener 0,3 s
+  levanta uno para arrastrarlo. Un arrastre lateral también lo levanta.
+  Incluye flechas para recorrer el catálogo sin arrastrar objetos.
+- Casillas: icono, número de acceso y cantidad tienen espacios independientes.
+- Lámparas: botón contextual de encendido a la derecha al apuntar a una,
+  hasta 12 m. El menú Iluminar conserva las temperaturas y su interruptor.
+- Telémetro: rayo visible, punto de impacto y lectura en directo. Hacia el cielo
+  el rayo se desvanece con la distancia; no dibuja una línea infinita.
+- Guía de campo: menú de instrumentos con iconos y explicación de uso.
+  Aparece una vez al entrar por primera vez en cada mundo tras instalar 3.1.
+  Puedes volver a abrirla con ? o H, sin recorrer un tutorial por pasos.
+- Identificador: áreas de detección ajustadas al tamaño visible de la Luna,
+  Tierra, Sol y planetas; respeta obstáculos. Los telescopios ocultos al usarlos
+  dejan de bloquear su propia línea de visión.
+- Nuevo Visor celeste en Investigación: filtro azul verdoso suave y etiquetas
+  de astros frente a la cámara. Cambiar de casilla lo quita. Las etiquetas
+  evitan los controles y no atraviesan el terreno ni las construcciones.
+- Rendimiento: reutiliza la propuesta de construcción cuando no cambia la
+  cámara, la pieza ni la base; limita el trabajo de identificación y etiquetas.
+  El láser solo actualiza sus buffers mientras está seleccionado. Se mantienen
+  las optimizaciones lunares de 3.0 y los recursos visuales existentes.
 
 CONTROLES
 
 Escritorio: WASD para caminar/conducir; Espacio para saltar; Shift mantenido
 para sprint/boost; F para linterna/faros; E para entrar, salir o interactuar.
 Los controles anteriores de mirar y telescopio se conservan.
-B abre la mochila; C abre el catálogo; J abre el cuaderno.
+B abre la mochila; C abre el catálogo; J abre el cuaderno; H abre la guía.
 1–9 y 0 seleccionan las diez casillas de acceso rápido.
-Con una pieza seleccionada: clic/acción coloca; R gira 90 grados sobre el eje
-seleccionado; Supr recupera la pieza apuntada; Ctrl+Z deshace; Ctrl+Y rehace.
+Con una pieza seleccionada: +/Enter coloca; toque/clic en el paisaje cancela;
+R gira 90 grados sobre el eje seleccionado; Supr recupera la pieza apuntada;
+Ctrl+Z deshace; Ctrl+Y rehace. Los anillos permiten girar tocándolos/arrastrándolos.
 
 Móvil horizontal: joystick izquierdo; mirada arrastrando el paisaje; acciones
 con el pulgar derecho. Se mantiene la captura independiente de varios dedos.
@@ -55,10 +86,12 @@ lanzados sigue avanzando.
 MOCHILA Y CATÁLOGO
 
 30 casillas principales más 10 accesos rápidos, separados visualmente.
-42 objetos del catálogo en cinco categorías y dos tipos de muestras recogibles.
+43 objetos del catálogo en cinco categorías y dos tipos de muestras recogibles.
 Una casilla guarda únicamente identificador y cantidad, no modelos 3D ocultos.
 
 Toca un objeto del catálogo para añadirlo o arrástralo a una casilla concreta.
+En móvil desliza verticalmente para explorar. Mantén un instante para levantar
+un objeto y después arrástralo; con ratón puedes arrastrarlo directamente.
 La cantidad creativa se elige de 1 a 30. Arrastra entre casillas para mover,
 intercambiar o fusionar. Al fusionar, el máximo es 30; el exceso de un stack
 existente permanece en su casilla de origen. Una pulsación larga o clic derecho
@@ -72,9 +105,11 @@ Las cajas colocadas permiten guardar diez stacks adicionales cada una.
 CONSTRUCCIÓN
 
 Selecciona una pieza en el acceso rápido. Su fantasma indica dónde irá:
-verde si cabe; rojizo y mensaje si la colocación no es válida.
-El botón de giro cambia 90 grados, con selector de eje. Las piezas tienen tamaños
-fijos; no hay escalado libre ni controles XYZ del editor de mapas.
+verde si cabe; rojizo y mensaje si la colocación no es válida. Si coincide con
+otra pieza ocupada, se oculta para evitar superposiciones.
+Los anillos y botones X/Y/Z giran en pasos de 90 grados; los cimientos solo giran
+sobre Y para conservar su cara superior horizontal. Las piezas tienen tamaños
+fijos, salvo las dimensiones del cimiento. No hay escalado libre.
 Hay pisos de tres tamaños, paneles completos/medios/bajos, ventanas, acceso,
 esquina, columnas, cubiertas, barandales, escaleras y rampa.
 El ajuste acerca bordes y centros modulares; apliques/repisas se fijan a paredes
@@ -84,6 +119,9 @@ al recuperarlo el césped reaparece.
 En la Luna, primero coloca un cimiento que abarque la construcción. Su ancho y
 fondo se ajustan entre 2 y 24 m en pasos de 2 m; su cara superior queda horizontal
 y su cuerpo se prolonga por debajo de la pendiente. Es sólido y caminable.
+Al apuntar al borde de un cimiento, el siguiente se acopla sin escalón ni banda
+decorativa entre sus caras superiores. Si el terreno sobresale del nivel de esa
+plataforma, avisa y no permite colocar el cimiento enterrado.
 Usa escaleras/rampa si queda elevado. Las piezas estructurales necesitan estar
 sobre su huella. Recupera primero las piezas apoyadas para quitar un cimiento.
 En Tierra no se exige cimiento. Los mismos objetos sirven en ambos mundos.
@@ -118,6 +156,12 @@ Identificador: apunta a un astro y mantén acción/clic para registrarlo.
 Analizador espectral: muestra color B−V, temperatura/clase aproximadas y una
 curva térmica orientativa de una estrella del catálogo.
 Telémetro: apunta a suelo, construcción o vehículo para leer la distancia.
+Mide hasta 600 m; su rayo visible se desvanece progresivamente antes de 60 m.
+Visor celeste: etiquetas con nombres y distancias aproximadas en kilómetros de
+planetas, Sol y Luna/Tierra; temperaturas estelares estimadas cuando existen.
+Solo se muestran hasta ocho etiquetas simultáneas para mantener legibilidad.
+Las distancias estelares no están en el catálogo original y se indican como
+no disponibles. La distancia Tierra–Luna mostrada es un valor medio.
 Recolector: mira suelo natural cercano para obtener suelo/regolito.
 Mesa de análisis: con energía cercana, consume una muestra y registra su ficha.
 Sismómetro: registra una señal simulada, identificada como tal.
@@ -176,13 +220,13 @@ sus piezas en una sola malla. Las luces de bases tienen presupuesto acotado.
 
 COMPROBACIONES Y LÍMITES
 
-Comprobado por pruebas de integración: arranque de ambos mundos, cantidades,
-arrastre táctil, fusión, lanzamiento/recogida, cimientos y apoyo, deshacer/rehacer,
-guardado, entrar/salir de sillas y telescopios, E/boost/salto de ambos vehículos,
-análisis, cuaderno, desbloqueos y reutilización de la caché lunar.
-Los shaders de ambos mundos, caché y nuevos objetos compilan y enlazan en el
-contexto gráfico local; las geometrías de los 44 tipos contienen datos válidos.
-La prueba de arranque/interacción usa DOM y renderer de prueba; no sustituye
-una prueba completa de render en Safari/Chrome. El navegador de comprobación
-bloqueó el acceso a localhost. No hay medición real de FPS en tu teléfono y no
-se promete una cifra concreta. Una base muy grande seguirá teniendo un coste.
+Verificado mediante pruebas de integración en ambos mundos: ciclo del fantasma,
+cancelar frente a arrastrar la mirada, captura independiente de los anillos,
+giros de 90°, desplazamiento y arrastre del catálogo, unión de cimientos de
+varios tamaños, identificación de Luna y siete planetas, láser, visor y su
+ocultación tras obstáculos, interruptor de lámparas y guía por destino.
+Comprobados 17 programas gráficos y geometrías válidas de los 45 tipos de objeto.
+La prueba de interacción usa DOM y renderer de prueba; la compilación gráfica
+usa un contexto local. No reemplazan una comprobación visual completa en
+Safari/Chrome: el navegador disponible bloqueó la vista local. No hay medición
+real de FPS en tu teléfono ni se promete una cifra concreta.

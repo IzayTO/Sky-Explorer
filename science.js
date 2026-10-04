@@ -1,4 +1,4 @@
-import {ITEMS,itemIcon} from './items.js?v=3.0';
+import {ITEMS,itemIcon} from './items.js?v=3.1';
 import {LAMP_TEMPERATURES} from './world-lighting.js?v=3.0';
 const KEY='sky-expedition-journal-v1';
 export const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

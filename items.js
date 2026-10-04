@@ -34,6 +34,7 @@ const rows=[
  ['telescope','Telescopio de piso',3,'telescope',[1.2,1.55,1.5],'Óptica de observatorio; orientar, mirar y ampliar.'],
  ['spectrometer','Analizador espectral',3,'tool',[.2,.3,.15]],
  ['identifier','Identificador celeste',3,'tool',[.2,.3,.15]],
+ ['visor','Visor celeste',3,'tool',[.2,.3,.15]],
  ['rangefinder','Telémetro láser',3,'tool',[.2,.3,.15]],
  ['sampler','Recolector de muestras',3,'tool',[.2,.3,.15]],
  ['camera','Cámara científica',3,'tool',[.2,.3,.15]],
@@ -51,5 +52,5 @@ export const ITEMS=Object.fromEntries(rows.map(([id,name,category,kind,size,note
 export const MAX_STACK=30;
 export const PALETTE={shell:0xc9d2c9,frame:0x52616a,dark:0x24303a,blue:0x4c768c,teal:0x6a9b93,gold:0xc89d64,white:0xe1e3d4,rubber:0x35413f};
 const symbols={foundation:'M3 9 12 5l9 4-9 4-9-4v9l9 4 9-4V9M12 13v9',floor:'m2 14 10-6 10 6-10 6-10-6Zm5-3 10 6m-10 0 10-6',wall:'M3 5h18v15H3zM3 15h18M7 5v15',window:'M3 4h18v17H3zM7 8h10v7H7z',door:'M3 21V4h18v17M8 21V9h8v12',roof:'m2 13 10-9 10 9M4 12v7h16v-7',stairs:'M3 20h18V5h-5v5h-5v5H6v5',ramp:'M3 20 21 5v15H3Z',chair:'M6 3v11h13v7M6 9h10v5M5 21v-7',table:'M3 10h18M5 10v11m14-11v11M3 6h18v4H3z',lamp:'M12 10v11M7 21h10M7 10h10l-2-7H9l-2 7Z',telescope:'m3 11 13-7 4 7-13 7-4-7ZM12 16v5m0-5-5 5m5-5 5 5',radio:'M6 3c-5 10 5 17 12 10L6 3Zm3 9 9-8M12 14v7m-4 0h8',solar:'m5 3 16 3-3 12L2 15 5 3Zm-2 6 16 3m-9-8-3 12m9-11-3 12M10 17v4',tool:'M8 3h8v18H8zM10 6h4v6h-4M11 17h2',beacon:'M12 4v17M6 21h12M6 9a8 8 0 0 1 12 0M9 12a4 4 0 0 1 6 0',sample:'M8 3h8v3l3 11a3 3 0 0 1-3 4H8a3 3 0 0 1-3-4L8 6V3Zm-1 12h10',box:'m3 7 9-4 9 4v13H3V7Zm0 0h18M9 12h6'};
-export function itemIcon(item){if(typeof item==='string')item=ITEMS[item];const k=item?.kind;return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${symbols[k]||symbols[{'floor':'floor','corner':'wall','column':'wall','rail':'wall','stool':'chair','desk':'table','lab':'table','shelf':'table','wall-lamp':'lamp','ceiling-lamp':'lamp','power':'solar','weather':'beacon'}[k]]||symbols.box}"/></svg>`;}
+export function itemIcon(item){if(typeof item==='string')item=ITEMS[item];const k=item?.kind;const tools={identifier:'M8 3h8v18H8zM5 8H2m20 0h-3M11 7h2m-3 5 2-2 2 2m-3 5h2',rangefinder:'M7 8h10v12H7zM10 3h4v5M12 3V1M10 12h4',spectrometer:'M6 3h12v18H6zM8 11l2-3 3 5 3-4M9 17h6',camera:'M3 7h5l2-3h4l2 3h5v13H3zM16 13a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z',sampler:'M10 3h4v10l4 5-2 3H8l-2-3 4-5V3Zm-2 14h8',notebook:'M5 3h14v18H5zM9 3v18m3-13h4m-4 4h4',visor:'M2 7h20v10h-7l-3-3-3 3H2V7Zm3 3h3m8 0h3'};return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${tools[item?.id]||symbols[k]||symbols[{'floor':'floor','corner':'wall','column':'wall','rail':'wall','stool':'chair','desk':'table','lab':'table','shelf':'table','wall-lamp':'lamp','ceiling-lamp':'lamp','power':'solar','weather':'beacon'}[k]]||symbols.box}"/></svg>`;}
 export function validStack(s){return s&&ITEMS[s.id]&&Number.isInteger(s.qty)&&s.qty>0&&s.qty<=MAX_STACK?{id:s.id,qty:s.qty}:null;}

@@ -7,8 +7,8 @@ import {LunarSky,MOON_GRAVITY} from './lunar-sky.js?v=2.2';
 import {LunarTerrain} from './lunar-terrain.js?v=3.0';
 import {Vehicle} from './vehicles.js?v=3.0';
 import {VehicleSound} from './vehicle-sound.js?v=2.3';
-import {Inventory} from './inventory.js?v=3.0';
-import {Expedition} from './expedition.js?v=3.0';
+import {Inventory} from './inventory.js?v=3.1';
+import {Expedition} from './expedition.js?v=3.1';
 import {LunarAmbience} from './lunar-sound.js';
 
 const $=id=>document.getElementById(id),mobile=matchMedia('(pointer:coarse)').matches,reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -107,7 +107,7 @@ async function enterDestination(destination){
     state.active=true;state.playing=false;targetHour=null;state.zoomReveal=0;walker.enabled=true;walker.resetInput();setFlashlight(false);setZoom(0);camera.fov=state.fov;camera.updateProjectionMatrix();
     expedition.activate();applyDestinationUI();syncVehicleUI();hideUI(false);$('hud').hidden=false;$('welcome').classList.add('leaving');setTimeout(()=>$('welcome').hidden=true,780);$('world').focus({preventScroll:true});
     await audible;audio.setVolume(state.volume);icon($('sound-button'),audio.muted?'mute':'volume');$('sound-button').setAttribute('aria-pressed',!audio.muted);$('sound-button').setAttribute('aria-label',audio.muted?'Activar ambiente':'Silenciar ambiente');
-    walker.update(0);sky.update(camera,state,elapsed,pixelRatio());expedition.update(elapsed,0,pixelRatio());terrain.prepareLighting?.(renderer,camera,sky);terrain.update(camera,sky,elapsed,state);renderer.compile(scene,camera);renderer.render(scene,camera);
+    walker.update(0);sky.update(camera,state,elapsed,pixelRatio());expedition.update(elapsed,0,pixelRatio());terrain.prepareLighting?.(renderer,camera,sky);terrain.update(camera,sky,elapsed,state);renderer.compile(scene,camera);renderer.render(scene,camera);expedition.guide.firstVisit();
     requestAnimationFrame(()=>$('fade').classList.remove('on'));setTimeout(()=>{$('look-hint').style.opacity='0';},8500);
   }catch(error){console.error(error);nextAudio.pause();$('loading-error').hidden=false;$('loading-error').textContent='No se pudo abrir este paisaje. Revisa que todos los archivos del ZIP estén juntos.';$('fade').classList.remove('on');}
   finally{switching=false;$('enter').disabled=false;$('moon-destination').disabled=false;$('moon-enter-label').textContent='Explorar';}
