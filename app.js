@@ -1,14 +1,14 @@
 import * as THREE from './three.module.js';
 import {Sky,clamp,smooth,phaseName} from './sky.js?v=2.3';
-import {Terrain} from './terrain.js?v=3.0';
-import {Walker,bindTimeLoop,cycleHour} from './controls.js?v=3.0';
+import {Terrain} from './terrain.js?v=3.2';
+import {Walker,bindTimeLoop,cycleHour} from './controls.js?v=3.2';
 import {Ambience} from './sound.js?v=2.0-luna';
 import {LunarSky,MOON_GRAVITY} from './lunar-sky.js?v=2.2';
-import {LunarTerrain} from './lunar-terrain.js?v=3.0';
-import {Vehicle} from './vehicles.js?v=3.0';
+import {LunarTerrain} from './lunar-terrain.js?v=3.2';
+import {Vehicle} from './vehicles.js?v=3.2';
 import {VehicleSound} from './vehicle-sound.js?v=2.3';
-import {Inventory} from './inventory.js?v=3.1';
-import {Expedition} from './expedition.js?v=3.1';
+import {Inventory} from './inventory.js?v=3.2';
+import {Expedition} from './expedition.js?v=3.2';
 import {LunarAmbience} from './lunar-sound.js';
 
 const $=id=>document.getElementById(id),mobile=matchMedia('(pointer:coarse)').matches,reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -72,7 +72,7 @@ async function init(){
     walker.onJump=()=>{if(!vehicle?.mounted)audio.jump();};walker.onLand=impact=>vehicle?.mounted?motor.land(impact):audio.land(impact);
     vehicle=new Vehicle(scene);motor=new VehicleSound(audio);state.vehicleLighting=vehicle.lighting;environments.earth={scene,sky,terrain,audio,vehicle,motor,preview:moon.image,saved:null};
     walker.onLook=()=>{$('look-hint').style.opacity='0';};
-    setupMoonPreview(moon.image);bindUI();expedition=new Expedition({state,camera,walker,renderer,inventory,getEnv:()=>environments[state.destination],toast,setScope,setZoom,setInventory});expedition.activate();syncPreferences();registerSkyTools();resize();walker.update(0);sky.update(camera,state,0,pixelRatio());terrain.update(camera,sky,0);expedition.update(0,0,pixelRatio());renderer.compile(scene,camera);renderer.render(scene,camera);
+    setupMoonPreview(moon.image);bindUI();expedition=new Expedition({state,camera,walker,renderer,inventory,getEnv:()=>environments[state.destination],toast,setScope,setZoom,setInventory});expedition.activate();syncPreferences();registerSkyTools();resize();walker.update(0);sky.update(camera,state,0,pixelRatio());terrain.update(camera,sky,0);expedition.update(0,0,pixelRatio());renderer.compile(scene,camera);renderer.render(scene,camera);expedition?.renderOverlay();
     $('enter').disabled=false;$('enter-label').textContent='Explorar';$('moon-destination').disabled=false;$('moon-enter-label').textContent='Explorar';
     renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();contextLost=true;cancelAnimationFrame(raf);walker.resetInput();audio.pause();toast('Recuperando el paisaje…');});
     renderer.domElement.addEventListener('webglcontextrestored',()=>{contextLost=false;for(const env of Object.values(environments))env.terrain.lightCache?.invalidate();frameTime=0;if(state.active)audio.start();raf=requestAnimationFrame(frame);});
@@ -107,7 +107,7 @@ async function enterDestination(destination){
     state.active=true;state.playing=false;targetHour=null;state.zoomReveal=0;walker.enabled=true;walker.resetInput();setFlashlight(false);setZoom(0);camera.fov=state.fov;camera.updateProjectionMatrix();
     expedition.activate();applyDestinationUI();syncVehicleUI();hideUI(false);$('hud').hidden=false;$('welcome').classList.add('leaving');setTimeout(()=>$('welcome').hidden=true,780);$('world').focus({preventScroll:true});
     await audible;audio.setVolume(state.volume);icon($('sound-button'),audio.muted?'mute':'volume');$('sound-button').setAttribute('aria-pressed',!audio.muted);$('sound-button').setAttribute('aria-label',audio.muted?'Activar ambiente':'Silenciar ambiente');
-    walker.update(0);sky.update(camera,state,elapsed,pixelRatio());expedition.update(elapsed,0,pixelRatio());terrain.prepareLighting?.(renderer,camera,sky);terrain.update(camera,sky,elapsed,state);renderer.compile(scene,camera);renderer.render(scene,camera);expedition.guide.firstVisit();
+    walker.update(0);sky.update(camera,state,elapsed,pixelRatio());expedition.update(elapsed,0,pixelRatio());terrain.prepareLighting?.(renderer,camera,sky);terrain.update(camera,sky,elapsed,state);renderer.compile(scene,camera);renderer.render(scene,camera);expedition?.renderOverlay();expedition.guide.firstVisit();
     requestAnimationFrame(()=>$('fade').classList.remove('on'));setTimeout(()=>{$('look-hint').style.opacity='0';},8500);
   }catch(error){console.error(error);nextAudio.pause();$('loading-error').hidden=false;$('loading-error').textContent='No se pudo abrir este paisaje. Revisa que todos los archivos del ZIP estén juntos.';$('fade').classList.remove('on');}
   finally{switching=false;$('enter').disabled=false;$('moon-destination').disabled=false;$('moon-enter-label').textContent='Explorar';}
@@ -191,7 +191,7 @@ function applyDestinationUI(){
   $('aim-moon').setAttribute('aria-label',lunar?'Centrar la Tierra':'Centrar la Luna');$('aim-moon').title=lunar?'Centrar la Tierra':'Centrar la Luna';icon($('aim-moon'),lunar?'earth':'moon');
   $('phase').value=state.phase*1000;const marks=document.querySelectorAll('.time-marks span');marks.forEach((mark,i)=>mark.textContent=lunar?['0 %','25','50','75','100 %'][i]:['00','06','12','18','24'][i]);
   const preset=document.querySelectorAll('[data-hour]');preset.forEach((el,i)=>el.textContent=lunar?['Noche','Salida del Sol','Día','Puesta del Sol','Noche'][i]:['Noche','Amanecer','Día','Atardecer','Noche'][i]);
-  $('controls-help').innerHTML=mobile?'<p>Joystick izquierdo: avanzar, retroceder y dirigir.</p><p>Arrastra para mirar, también desde los botones de acción. Mantén correr para sprintar; al conducir, mantén el rayo para usar el impulso.</p><p>Linterna o faros: apagados → bajas → altas. Salto y salida a la derecha.</p>':'<p><kbd>WASD</kbd> Mover / conducir · <kbd>← →</kbd> Girar</p><p><kbd>Espacio</kbd> Saltar · <kbd>Shift</kbd> Correr / impulso</p><p><kbd>F</kbd> Linterna / faros · <kbd>E</kbd> Subir / bajar</p><p>Arrastrar: mirar · Doble clic: capturar ratón · <kbd>Esc</kbd> Liberar</p><p><kbd>B</kbd> Mochila · <kbd>1–9, 0</kbd> Casilla a mano</p><p><kbd>C</kbd> Catálogo · <kbd>J</kbd> Cuaderno</p><p><kbd>R</kbd> Girar 90° · <kbd>Supr</kbd> Recuperar pieza</p><p><kbd>Ctrl Z / Y</kbd> Deshacer / rehacer</p><p><kbd>T</kbd> Telescopio · <kbd>H</kbd> Ocultar interfaz</p>';
+  $('controls-help').innerHTML=mobile?'<p>Joystick izquierdo: avanzar, retroceder y dirigir.</p><p>Arrastra para mirar, también desde los botones de acción. Mantén correr para sprintar; al conducir, mantén el rayo para usar el impulso.</p><p>Linterna o faros: apagados → bajas → altas. Salto y salida a la derecha.</p>':'<p><kbd>WASD</kbd> Mover / conducir · <kbd>← →</kbd> Girar</p><p><kbd>Espacio</kbd> Saltar · <kbd>Shift</kbd> Correr / impulso</p><p><kbd>F</kbd> Linterna / faros · <kbd>E</kbd> Interactuar / mochila</p><p>Arrastrar: mirar · Doble clic: capturar ratón · <kbd>Esc</kbd> Liberar</p><p><kbd>B</kbd> Mochila · <kbd>1–9, 0</kbd> Casilla a mano</p><p><kbd>C</kbd> Catálogo · <kbd>J</kbd> Cuaderno · <kbd>Q</kbd> Soltar</p><p>Anillos / barras: giro libre · <kbd>R</kbd> Ajustar 90° · <kbd>Supr</kbd> Recuperar</p><p><kbd>Ctrl Z / Y</kbd> Deshacer / rehacer · Lápiz: editar</p><p><kbd>T</kbd> Telescopio · <kbd>H</kbd> Guía · <kbd>F1</kbd> Ocultar interfaz</p>';
   updateReadouts();
 }
 function bindUI(){
@@ -235,20 +235,21 @@ function bindUI(){
   window.addEventListener('keydown',e=>{if(state.expeditionPanel)return;if(state.inventory&&e.code==='Tab'){inventory.trapTab(e,$('inventory-close'));return;}if(!state.active||e.repeat||e.metaKey||e.ctrlKey||e.altKey)return;const tag=e.target.tagName;if(tag==='SELECT'||tag==='TEXTAREA'||e.target.isContentEditable||(tag==='INPUT'&&!['range','checkbox'].includes(e.target.type)))return;
     if(state.inventory){
       inventory.trapTab(e,$('inventory-close'));
-      if(e.code==='Escape'||e.code==='KeyB'){e.preventDefault();setInventory(false);}
-      else if(/^Digit[0-9]$/.test(e.code)){e.preventDefault();inventory.select((Number(e.code.slice(-1))+9)%10);}
+      if(e.code==='Escape'||e.code==='KeyB'||e.code==='KeyE'){e.preventDefault();setInventory(false);}
+      else if(/^Digit[0-9]$/.test(e.code)){e.preventDefault();inventory.hotkey((Number(e.code.slice(-1))+9)%10);}
       return;
     }
     if(e.code==='KeyB'){e.preventDefault();setInventory(true);return;}
     if(e.code==='Escape'){if(state.panel)setPanel(false);else if(state.scope)setScope(false);else if(state.hiddenUI)hideUI(false);}
-    if(e.code==='KeyE'&&!state.panel){e.preventDefault();if(!expedition.interact())vehicle.mounted?leaveVehicle():enterVehicle();}
+    if(e.code==='KeyE'&&!state.panel){e.preventDefault();if(!expedition.interact()){if(vehicle.mounted)leaveVehicle();else if(vehicle.canEnter(camera,walker))enterVehicle();else setInventory(true);}}
     if(e.code==='KeyF'&&!state.panel){e.preventDefault();useLight();}
     if(e.code==='KeyT'&&!state.panel){e.preventDefault();setScope(!state.scope);}
-    if(e.code==='KeyH'){e.preventDefault();hideUI(!state.hiddenUI);}
+    if(e.code==='F1'){e.preventDefault();hideUI(!state.hiddenUI);}
     if(e.code==='KeyM')$('sound-button').click();
     if(tag!=='INPUT'&&/^Digit[0-9]$/.test(e.code)&&!state.panel){e.preventDefault();const key=Number(e.code.slice(-1));if(state.scope&&key<4)setZoom(key);else inventory.select((key+9)%10);}
 
   });
+  window.addEventListener('wheel',e=>{if(!state.active||state.inventory||state.panel||state.expeditionPanel||state.scope||e.target.closest?.('input,button,.build-controls'))return;e.preventDefault();inventory.select((inventory.selected+(e.deltaY>0?1:9))%10);},{passive:false});
   // Keep sliders keyboard-operable, while mouse/touch release doesn't trap WASD.
   document.querySelectorAll('input[type=range]').forEach(input=>input.addEventListener('pointerup',()=>input.blur()));
   document.addEventListener('pointerdown',e=>{if(state.panel&&!$('settings').contains(e.target)&&!$('settings-button').contains(e.target))setPanel(false,false);});
@@ -285,9 +286,9 @@ function frame(now){
   const reveal=state.scope?state.zoom/3:0;state.zoomReveal+=(reveal-state.zoomReveal)*(1-Math.exp(-dt*5));
   const desired=targetFov();if(camera.fov!==desired){camera.fov=Math.exp(Math.log(camera.fov)+(Math.log(desired)-Math.log(camera.fov))*(1-Math.exp(-dt*(reduced?20:5))));if(Math.abs(camera.fov-desired)<.0001)camera.fov=desired;camera.updateProjectionMatrix();}
   walker.sensitivity=state.scope?Math.max(.008,Math.tan(camera.fov*Math.PI/360)/Math.tan(state.fov*Math.PI/360)):1;expedition.beforeMotion();walker.update(dt);expedition.afterMotion();
-  if(!vehicle.mounted){vehicle.integrate(dt,0,0,state.active&&!state.panel&&!state.inventory);vehicle.collideWalker(walker);if(!walker.driver){camera.position.x=walker.pos.x;camera.position.z=walker.pos.z;}}
+  if(!vehicle.mounted){vehicle.integrate(dt,0,0,state.active&&!state.panel&&!state.inventory);if(!walker.driver)vehicle.collideWalker(walker);if(!walker.driver){camera.position.x=walker.pos.x;camera.position.z=walker.pos.z;}}
   vehicle.updateLighting(dt);state.headlightExposure=Math.max(vehicle.exposure(camera),environments[state.destination].world.lights.exposure(camera));
-  sky.update(camera,state,elapsed,pixelRatio());expedition.update(elapsed,dt,pixelRatio());terrain.prepareLighting?.(renderer,camera,sky);terrain.update(camera,sky,elapsed,state);vehicle.updateAppearance(sky,camera,state,dt);audio.update(elapsed,sky.night,state.hour);motor.update(vehicle);updateVehiclePrompt();renderer.render(scene,camera);
+  sky.update(camera,state,elapsed,pixelRatio());expedition.update(elapsed,dt,pixelRatio());terrain.prepareLighting?.(renderer,camera,sky);terrain.update(camera,sky,elapsed,state);vehicle.updateAppearance(sky,camera,state,dt);audio.update(elapsed,sky.night,state.hour);motor.update(vehicle);updateVehiclePrompt();renderer.render(scene,camera);expedition?.renderOverlay();
   uiTime+=dt;if(uiTime>.12){uiTime=0;updateReadouts();updateVehicleUI();}
   // Reduce only pixel density under sustained pressure. Sky layers, lunar map,
   // star catalogue and grass geometry remain intact; never degrade from one spike.

@@ -1,5 +1,5 @@
 import * as THREE from './three.module.js';
-import {worldLightGLSL,worldUniforms} from './world-lighting.js?v=3.0';
+import {worldLightGLSL,worldUniforms} from './world-lighting.js?v=3.2';
 import {flashlightGLSL,vehicleLightGLSL,vehicleLightUniforms,updateVehicleLightUniforms} from './flashlight.js?v=2.3';
 
 // Original, locally authored geometry. Static details are merged into one draw;
@@ -40,10 +40,10 @@ function vehicleMaterial(){
     ${flashlightGLSL}${vehicleLightGLSL}${worldLightGLSL}
     void main(){vec3 n=normalize(vNormal),view=normalize(eye-vWorld);float ndl=max(0.,dot(n,sun));
       vec3 ambient=mix(vec3(.009,.014,.021)+vec3(.17)*day,vec3(.00004),lunar);
-      vec3 light=ambient+vec3(1.,.96,.86)*ndl*sunVisibility*mix(day*.8,1.35,lunar)*baseVisibility(vWorld+n*.03,sun,150.)
-        +vec3(.46,.63,1.)*max(0.,dot(n,earth))*earthPower;
-      if(torch>.001){vec3 d=eye-vWorld;light+=vec3(.92,.96,1.)*flashlightBeam(-d,forward)*torch*(.10+.90*max(0.,dot(n,normalize(d))));}
-      if(lampMode>.001){light+=vec3(.92,.96,1.)*(headlightBeam(vWorld-lampLeft)+headlightBeam(vWorld-lampRight))*.15;}
+      vec3 light=ambient+vec3(1.,.96,.86)*ndl*sunVisibility*mix(day*.8,1.35,lunar)*(ndl>.001?baseVisibility(vWorld+n*.03,sun,2000.):1.)
+        +vec3(.46,.63,1.)*max(0.,dot(n,earth))*earthPower*(earthPower>.0001?baseVisibility(vWorld+n*.02,earth,2000.):1.);
+      if(torch>.001){vec3 d=eye-vWorld;light+=vec3(.92,.96,1.)*flashlightBeam(-d,forward)*torch*(.10+.90*max(0.,dot(n,normalize(d))))*basePointVisibility(vWorld,n,eye);}
+      if(lampMode>.001){light+=vec3(.92,.96,1.)*(headlightBeam(vWorld-lampLeft)*basePointVisibility(vWorld,n,lampLeft)+headlightBeam(vWorld-lampRight)*basePointVisibility(vWorld,n,lampRight))*.15;}
       float spec=pow(max(0.,dot(n,normalize(sun+view))),40.)*ndl*sunVisibility*mix(day,1.,lunar);
       light+=baseLighting(vWorld,n);vec3 color=vPaint*light+vec3(spec*.07);
       if(vEmission>0.)color+=vPaint*vEmission*min(lampMode,1.)*2.4;

@@ -1,5 +1,5 @@
-import {ITEMS,itemIcon} from './items.js?v=3.1';
-import {LAMP_TEMPERATURES} from './world-lighting.js?v=3.0';
+import {ITEMS,itemIcon} from './items.js?v=3.2';
+import {LAMP_TEMPERATURES} from './world-lighting.js?v=3.2';
 const KEY='sky-expedition-journal-v1';
 export const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const FILTERS=[['visible','Visible','Disponible al comenzar.'],['infrared','Infrarrojo','Observa la Luna con el identificador o telescopio de piso.'],['ultraviolet','Ultravioleta','Identifica tres estrellas distintas.'],['radio','Radio / microondas','Encuentra una señal con la antena.'],['xray','Rayos X','Analiza una muestra lunar.'],['gamma','Gamma','Completa las cuatro observaciones anteriores.']];

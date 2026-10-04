@@ -1,5 +1,5 @@
 import * as THREE from './three.module.js';
-import {createVehicleModel} from './vehicle-models.js?v=3.0';
+import {createVehicleModel} from './vehicle-models.js?v=3.2';
 
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x)),damp=(a,b,k,dt)=>a+(b-a)*(1-Math.exp(-k*dt));
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);

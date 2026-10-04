@@ -1,4 +1,4 @@
-import {ITEMS,CATEGORIES,MAX_STACK,itemIcon,validStack} from './items.js?v=3.1';
+import {ITEMS,CATEGORIES,MAX_STACK,itemIcon,validStack} from './items.js?v=3.2';
 const STORAGE='sky-expedition-inventory-v1';
 export class InventoryStore {
   constructor(){this.slots=Array(40).fill(null);this.selected=0;this.onChange=()=>{};}
@@ -12,6 +12,7 @@ export class InventoryStore {
     if(b?.id===a.id){const n=Math.min(MAX_STACK-b.qty,a.qty);b.qty+=n;a.qty-=n;if(!a.qty)this.slots[from]=null;}
     else [this.slots[from],this.slots[to]]=[b,a];this.changed();
   }
+  quickMove(index){const source=this.slots[index];if(!source)return;const begin=index<30?30:0,end=index<30?40:30;for(let i=begin;i<end&&this.slots[index];i++)if(this.slots[i]?.id===source.id&&this.slots[i].qty<30)this.transfer(index,i);for(let i=begin;i<end&&this.slots[index];i++)if(!this.slots[i])this.transfer(index,i);}
   create(id,qty,to){if(!ITEMS[id]||ITEMS[id].sample||to<0||to>=40)return false;qty=Math.max(1,Math.min(30,Math.round(qty)));const s=this.slots[to];
     if(s&&s.id!==id)return false;if(s)s.qty=Math.min(30,s.qty+qty);else this.slots[to]={id,qty};this.changed();return true;
   }
@@ -30,8 +31,8 @@ export class Inventory extends InventoryStore {
     this.panel=document.querySelector('.inventory-panel');this.overlay=document.getElementById('inventory-overlay');
     try{const d=JSON.parse(localStorage.getItem(STORAGE));if(d){this.slots=Array.from({length:40},(_,i)=>validStack(d.slots?.[i]));this.selected=Math.max(0,Math.min(9,Number(d.selected)||0));}}catch{}
     const make=(parent,index,hot=false)=>{const b=document.createElement('button');b.type='button';b.className='inventory-slot';b.dataset.index=index;
-      b.addEventListener('click',e=>{if(performance.now()<(this.suppressClick||0)){e.preventDefault();e.stopPropagation();return;}if(index>=30){this.select(index-30);}if(hot)document.getElementById('world').focus({preventScroll:true});});
-      if(!hot){b.addEventListener('pointerdown',e=>this.begin(e,{index}));b.addEventListener('contextmenu',e=>{e.preventDefault();this.menu(index,e.clientX,e.clientY);});}
+      b.addEventListener('click',e=>{if(performance.now()<(this.suppressClick||0)){e.preventDefault();e.stopPropagation();return;}if(e.shiftKey&&!hot){this.quickMove(index);return;}if(index>=30){this.select(index-30);}if(hot)document.getElementById('world').focus({preventScroll:true});});
+      if(!hot){b.addEventListener('pointerenter',()=>this.hovered=index);b.addEventListener('pointerleave',()=>{if(this.hovered===index)this.hovered=null;});b.addEventListener('focus',()=>this.focused=index);b.addEventListener('pointerdown',e=>this.begin(e,{index}));b.addEventListener('contextmenu',e=>{e.preventDefault();this.menu(index,e.clientX,e.clientY);});}
       parent.appendChild(b);return b;};
     for(let i=0;i<30;i++)this.main.push(make(main,i));
     for(let i=0;i<10;i++){this.quick.push(make(quick,i+30));this.hotbar.push(make(hotbar,i+30,true));}
@@ -48,8 +49,9 @@ export class Inventory extends InventoryStore {
     this.context=document.createElement('div');this.context.className='stack-menu glass';this.context.hidden=true;this.context.setAttribute('role','dialog');this.overlay.append(this.context);
     document.addEventListener('pointermove',e=>this.move(e));document.addEventListener('pointerup',e=>this.end(e));document.addEventListener('pointercancel',()=>this.cancel());
     document.addEventListener('pointerdown',e=>{if(!this.context.contains(e.target))this.context.hidden=true;});
+    window.addEventListener('keydown',e=>{if(this.overlay.hidden||e.code!=='KeyQ'||e.repeat||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const index=this.hovered;if(!Number.isInteger(index)||!this.slots[index])return;e.preventDefault();const stack=this.slots[index],qty=e.ctrlKey||e.metaKey?stack.qty:1;if(this.onDrop({id:stack.id,qty}))this.consume(index,qty);});
     window.addEventListener('blur',()=>this.cancel());document.addEventListener('visibilitychange',()=>{if(document.hidden)this.cancel();});
-    this.render();this.renderCatalog();document.getElementById('inventory-note').textContent='Arrastra entre casillas. Fuera de esta ventana: lanzar. Clic derecho o pulsación larga: opciones.';
+    this.render();this.renderCatalog();document.getElementById('inventory-note').textContent='Arrastra entre casillas. Fuera de esta ventana: lanzar. Shift + clic: mover stack. 1–9 / 0: intercambiar con la mano. Clic derecho o pulsación larga: opciones.';
   }
   select(index){super.select(index);this.onSelect(index);}
   save(){try{localStorage.setItem(STORAGE,JSON.stringify({slots:this.slots,selected:this.selected}));}catch{this.notify('No se pudo guardar la mochila. Exporta tu expedición.');}}
@@ -61,7 +63,7 @@ export class Inventory extends InventoryStore {
   renderCatalog(){this.catalog.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-pressed',b.textContent===this.category));const list=this.catalog.querySelector('.catalog-items');list.replaceChildren();
     for(const item of Object.values(ITEMS).filter(i=>i.category===this.category&&!i.sample)){const b=document.createElement('button');b.type='button';b.className='catalog-item';b.innerHTML=itemIcon(item);const span=document.createElement('span');span.textContent=item.name;b.append(span);b.title=item.note||item.name;b.addEventListener('pointerdown',e=>this.begin(e,{id:item.id}));b.addEventListener('click',e=>{if(performance.now()<(this.suppressClick||0))return;const empty=this.slots.indexOf(null);if(empty<0)return this.notify('Tu mochila está llena.');this.create(item.id,this.quantity,empty);this.notify(item.name+' añadido a la mochila.');});list.append(b);}
   }
-  begin(e,source){if(e.button!==0||this.overlay.hidden||this.drag)return;if(source.index!==undefined&&!this.slots[source.index])return;e.preventDefault();e.stopPropagation();this.context.hidden=true;
+  begin(e,source){if(e.button!==0||this.overlay.hidden||this.drag)return;if(source.index!==undefined&&!this.slots[source.index])return;if(e.shiftKey&&source.index!==undefined){e.preventDefault();this.quickMove(source.index);this.suppressClick=performance.now()+450;return;}e.preventDefault();e.stopPropagation();this.context.hidden=true;
     const stack=source.id?{id:source.id,qty:this.quantity}:{...this.slots[source.index]},touch=e.pointerType!=='mouse';this.drag={...source,stack,idPointer:e.pointerId,x:e.clientX,y:e.clientY,lastY:e.clientY,active:false,element:e.currentTarget,touch,scrolling:false};
     e.currentTarget.setPointerCapture?.(e.pointerId);
     if(touch&&source.id)this.hold=setTimeout(()=>{const d=this.drag;if(d&&!d.scrolling){d.active=true;this.showDrag(d,d.x,d.y);d.element.classList.add('catalog-lifted');}},300);
@@ -86,5 +88,6 @@ export class Inventory extends InventoryStore {
     for(const [name,fn] of actions){const b=document.createElement('button');b.type='button';b.textContent=name;b.addEventListener('click',()=>{fn();this.context.hidden=true;});this.context.append(b);}
     this.context.hidden=false;this.context.style.left=Math.max(8,Math.min(innerWidth-240,x))+'px';this.context.style.top=Math.max(8,Math.min(innerHeight-this.context.offsetHeight-8,y))+'px';range.focus();
   }
+  hotkey(index){const source=this.hovered??(this.overlay.contains(document.activeElement)?Number(document.activeElement.dataset.index):NaN),to=30+index;if(Number.isInteger(source)&&source>=0&&source<40){if(source!==to){[this.slots[source],this.slots[to]]=[this.slots[to],this.slots[source]];this.changed();}}else this.select(index);}
   trapTab(e){if(e.code!=='Tab')return;const nodes=[...this.overlay.querySelectorAll('button,input,select')].filter(el=>el.offsetParent!==null&&!el.disabled);if(!nodes.length)return;const i=nodes.indexOf(document.activeElement);if(i<0||(e.shiftKey&&i===0)||(!e.shiftKey&&i===nodes.length-1)){e.preventDefault();nodes[e.shiftKey?nodes.length-1:0].focus();}}
 }

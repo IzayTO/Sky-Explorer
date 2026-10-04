@@ -1,5 +1,5 @@
 import * as THREE from './three.module.js';
-import {worldLightGLSL,worldUniforms} from './world-lighting.js?v=3.0';
+import {worldLightGLSL,worldUniforms} from './world-lighting.js?v=3.2';
 import {LunarLightCache,heightGLSL,cacheGLSL} from './lunar-light-cache.js?v=3.0';
 import {clamp} from './sky.js?v=2.3';
 import {flashlightGLSL,vehicleLightGLSL,vehicleLightUniforms,updateVehicleLightUniforms} from './flashlight.js?v=2.3';
@@ -33,11 +33,11 @@ export class LunarTerrain{
         n=normalize(n-bump*.037*(1.-smoothstep(25.,110.,distanceToEye)));
         vec3 safePoint=p+normalize(vNormal)*.24;
         float solar=max(0.,dot(n,sun)),earthLit=max(0.,dot(n,earth));
-        float s=0.,e=0.;if(solar>.001&&sun.y>-.01)s=solar*cachedTerrainShadow(safePoint,sun,0.)*baseVisibility(p+normalize(vNormal)*.03,sun,250.)*vehicleOcclusion(p+normalize(vNormal)*.004,sun);
-        if(earthPower>.0001&&earthLit>.001)e=earthLit*cachedTerrainShadow(safePoint,earth,1.)*baseVisibility(p+normalize(vNormal)*.03,earth,250.)*earthPower*vehicleOcclusion(p+normalize(vNormal)*.004,earth);
+        float s=0.,e=0.;if(solar>.001&&sun.y>-.01)s=solar*cachedTerrainShadow(safePoint,sun,0.)*baseVisibility(p+normalize(vNormal)*.03,sun,2000.)*vehicleOcclusion(p+normalize(vNormal)*.004,sun);
+        if(earthPower>.0001&&earthLit>.001)e=earthLit*cachedTerrainShadow(safePoint,earth,1.)*baseVisibility(p+normalize(vNormal)*.03,earth,2000.)*earthPower*vehicleOcclusion(p+normalize(vNormal)*.004,earth);
         vec3 illumination=vec3(.000025)+vec3(1.,.98,.93)*s*1.38+vec3(.46,.63,1.)*e;
         if(torch>.001){float beam=flashlightBeam(p-eye,forward)*torch;
-          if(beam>.001){vec3 delta=eye-p;float len=length(delta);vec3 toLamp=delta/max(len,.001);float occlusion=torchShadow(safePoint,toLamp,len);illumination+=vec3(.92,.96,1.)*(.12+.88*max(dot(n,toLamp),0.))*occlusion*beam;}}
+          if(beam>.001){vec3 delta=eye-p;float len=length(delta);vec3 toLamp=delta/max(len,.001);float occlusion=torchShadow(safePoint,toLamp,len)*baseVisibility(p+n*.02,toLamp,len-.055);illumination+=vec3(.92,.96,1.)*(.12+.88*max(dot(n,toLamp),0.))*occlusion*beam;}}
         if(lampMode>.001){
           float beamL=headlightBeam(p-lampLeft),beamR=headlightBeam(p-lampRight);
           if(max(beamL,beamR)>.001){
@@ -49,10 +49,10 @@ export class LunarTerrain{
             float shadowL=1.,shadowR=1.;
             if(min(lenL,lenR)>18.){vec3 mid=(lampLeft+lampRight)*.5-p;float len=length(mid);shadowL=torchShadow(safePoint,mid/len,len);shadowR=shadowL;}
             else{if(beamL>.001)shadowL=torchShadow(safePoint,l,lenL);if(beamR>.001)shadowR=torchShadow(safePoint,r,lenR);}
-            illumination+=vec3(.92,.96,1.)*((.12+.88*max(dot(n,l),0.))*beamL*shadowL+(.12+.88*max(dot(n,r),0.))*beamR*shadowR);
+            illumination+=vec3(.92,.96,1.)*((.12+.88*max(dot(n,l),0.))*beamL*shadowL*baseVisibility(p+n*.02,l,lenL-.055)+(.12+.88*max(dot(n,r),0.))*beamR*shadowR*baseVisibility(p+n*.02,r,lenR-.055));
           }
         }
-        float red=rearBeam(p);if(red>.001){vec3 d=rearLamp-p;float len=length(d);vec3 l=d/max(len,.001);illumination+=vec3(1.,.009,.002)*red*(.15+.85*max(dot(n,l),0.))*torchShadow(safePoint,l,len);}
+        float red=rearBeam(p);if(red>.001){vec3 d=rearLamp-p;float len=length(d);vec3 l=d/max(len,.001);illumination+=vec3(1.,.009,.002)*red*(.15+.85*max(dot(n,l),0.))*torchShadow(safePoint,l,len)*baseVisibility(p+n*.02,l,len-.055);}
 
         illumination+=baseLighting(p,n);
         float albedo=.28+(mottling-.5)*.16+(grains-.5)*.12;

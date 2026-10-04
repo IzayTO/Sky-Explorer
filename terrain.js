@@ -1,5 +1,5 @@
 import * as THREE from './three.module.js';
-import {worldLightGLSL,worldUniforms} from './world-lighting.js?v=3.0';
+import {worldLightGLSL,worldUniforms} from './world-lighting.js?v=3.2';
 import {flashlightGLSL,vehicleLightGLSL,vehicleLightUniforms,updateVehicleLightUniforms} from './flashlight.js?v=2.3';
 // Continuous flat ground, with nearby instanced grass. The shader shades distant
 // detail analytically: no tiling photograph, loaded model, shadow atlas or edge.
@@ -18,11 +18,12 @@ vec3 illumination(vec3 base,float occlusion){
   return lit;
 }
 vec3 torchLight(vec3 lit,vec3 base,vec3 pos,float occlusion){
-  lit*=mix(1.,vehicleOcclusion(pos+vec3(0.,.004,0.),sunDirection)*baseVisibility(pos+vec3(0.,.03,0.),sunDirection,150.),daylight*.82);
+  if(daylight>.001&&sunDirection.y>-.02)lit*=mix(1.,vehicleOcclusion(pos+vec3(0.,.004,0.),sunDirection)*baseVisibility(pos+vec3(0.,.03,0.),sunDirection,2000.),daylight*.82);
   float beam=0.;
-  if(torch>.001)beam=flashlightBeam(pos-eye,forward)*torch*(.12+.88*max(normalize(eye-pos).y,0.));
-  if(lampMode>.001){beam+=headlightBeam(pos-lampLeft)*(.13+.87*max(normalize(lampLeft-pos).y,0.));beam+=headlightBeam(pos-lampRight)*(.13+.87*max(normalize(lampRight-pos).y,0.));}
-  return sqrt(lit*lit+base*(vec3(.92,.96,1.)*beam+vec3(1.,.009,.002)*rearBeam(pos)+baseLighting(pos,vec3(0.,1.,0.)))*occlusion*.48);
+  if(torch>.001){float b=flashlightBeam(pos-eye,forward)*torch;if(b>.001)beam=b*(.12+.88*max(normalize(eye-pos).y,0.))*basePointVisibility(pos,vec3(0.,1.,0.),eye);}
+  if(lampMode>.001){float l=headlightBeam(pos-lampLeft),r=headlightBeam(pos-lampRight);if(l>.001)beam+=l*(.13+.87*max(normalize(lampLeft-pos).y,0.))*basePointVisibility(pos,vec3(0.,1.,0.),lampLeft);if(r>.001)beam+=r*(.13+.87*max(normalize(lampRight-pos).y,0.))*basePointVisibility(pos,vec3(0.,1.,0.),lampRight);}
+  float rear=rearBeam(pos);if(rear>.001)rear*=basePointVisibility(pos,vec3(0.,1.,0.),rearLamp);
+  return sqrt(lit*lit+base*(vec3(.92,.96,1.)*beam+vec3(1.,.009,.002)*rear+baseLighting(pos,vec3(0.,1.,0.)))*occlusion*.48);
 }
 vec3 groundHaze(vec3 c,vec3 pos){float d=length(pos.xz-eye.xz);float haze=1.-exp(-d*.0019);float toward=dot(normalize(pos.xz-eye.xz),normalize(sunDirection.xz+vec2(.0001)))*.5+.5;
   vec3 fog=mix(vec3(.031,.041,.053),vec3(.57,.67,.64),daylight);

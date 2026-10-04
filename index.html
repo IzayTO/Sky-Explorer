@@ -7,7 +7,7 @@
   <meta name="description" content="Dos horizontes, el paso de la luz y todo un cielo por descubrir. Una experiencia personal de exploración.">
   <title>A cielo abierto</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23111f25'/%3E%3Cpath d='M12 43h40M18 35a14 14 0 0128 0' fill='none' stroke='%23dec8a2' stroke-width='3'/%3E%3Ccircle cx='43' cy='17' r='2' fill='%23fff3dc'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="./styles.css?v=3.1">
+  <link rel="stylesheet" href="./styles.css?v=3.2">
 </head>
 <body>
   <main id="world" tabindex="-1" aria-label="Paisaje interactivo en primera persona"></main>
@@ -63,7 +63,7 @@
         <div class="field compact"><label class="field-label" for="quality">Detalle visual</label><select id="quality"><option value="auto">Automático</option><option value="high">Alto</option><option value="balanced">Equilibrado</option></select></div>
         <div id="lunar-flash-setting" class="toggle-row" hidden><label for="flashlight-setting">Linterna</label><input id="flashlight-setting" class="switch" type="checkbox"></div><div class="field compact" id="headlight-setting-row" hidden><label class="field-label" for="headlight-setting">Faros del vehículo</label><select id="headlight-setting"><option value="0">Apagados</option><option value="1">Luces bajas</option><option value="2">Luces altas</option></select></div><p id="gravity-note" class="panel-note">Espacio o el botón de salto para saltar.</p>
         <button id="reset-position" class="text-button">Volver al punto de inicio</button>
-        <div class="controls-help" id="controls-help"><p><kbd>W A S D</kbd> Caminar · <kbd>← →</kbd> Girar · <kbd>Espacio</kbd> Saltar</p><p>Arrastrar: mirar · <kbd>T</kbd> Telescopio · <kbd>H</kbd> Ocultar</p><p><kbd>Esc</kbd> Cerrar · Doble clic: mirada con ratón · Esc: liberar</p></div>
+        <div class="controls-help" id="controls-help"><p><kbd>W A S D</kbd> Caminar · <kbd>← →</kbd> Girar · <kbd>Espacio</kbd> Saltar</p><p>Arrastrar: mirar · <kbd>T</kbd> Telescopio · <kbd>F1</kbd> Ocultar</p><p><kbd>Esc</kbd> Cerrar · Doble clic: mirada con ratón · Esc: liberar</p></div>
       </div>
     </aside>
 
@@ -77,7 +77,7 @@
     </div>
     <button id="vehicle-enter" class="vehicle-enter glass" aria-label="Sentarse al volante" title="Sentarse · E" hidden><span data-icon="seat"></span><span class="enter-caption">Sentarse <kbd>E</kbd></span></button>
     <div id="vehicle-status" class="vehicle-status glass" hidden><span id="vehicle-name"></span><span id="vehicle-speed">0 km/h</span><span id="vehicle-lights">Faros apagados</span><span id="boost-status">Impulso listo</span><small class="drive-keys">WASD · Espacio · Shift · F · E</small></div>
-    <button id="backpack-button" class="icon-button glass" aria-label="Abrir mochila" aria-controls="inventory-overlay" aria-expanded="false" title="Mochila · B" data-icon="backpack"></button>
+    <button id="backpack-button" class="icon-button glass" aria-label="Abrir mochila" aria-controls="inventory-overlay" aria-expanded="false" title="Mochila · E / B" data-icon="backpack"></button>
     <nav id="hotbar" aria-label="Diez casillas de acceso rápido"></nav>
     <div id="inventory-overlay" hidden>
       <section class="inventory-panel glass" role="dialog" aria-modal="true" aria-labelledby="inventory-title" aria-describedby="inventory-note">
@@ -104,6 +104,6 @@
   <button id="show-ui" class="icon-button glass" aria-label="Mostrar controles" hidden data-icon="eye"></button>
   <div id="toast" role="status" aria-live="polite"></div>
   <noscript>Activa JavaScript en tu navegador para explorar el paisaje.</noscript>
-  <script type="module" src="./app.js?v=3.1"></script>
+  <script type="module" src="./app.js?v=3.2"></script>
 </body>
 </html>

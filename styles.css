@@ -154,3 +154,58 @@ body:not(.touch-controls) .movement-actions{display:block;bottom:calc(110px + va
 @media(orientation:portrait) and (max-width:850px){.inventory-panel{max-height:calc(100dvh - 34px - var(--safe-top) - var(--safe-bottom));overflow:auto}.inventory-panel.has-catalog .inventory-layout{overflow:visible;flex:none}.creative-catalog{max-height:260px;min-height:230px}.catalog-items{min-height:80px}.inventory-bag{overflow:visible}.field-guide{grid-template-columns:110px minmax(0,1fr);gap:12px;height:calc(100dvh - 235px - var(--safe-top) - var(--safe-bottom))}.guide-items button{flex-direction:column;text-align:center;font-size:9px!important;padding:8px 4px!important}.guide-detail h3{font-size:21px}.guide-detail p{font-size:11px}#build-controls{bottom:calc(65px + var(--safe-bottom))}#exp-readout{bottom:calc(292px + var(--safe-bottom));max-width:85vw}#lamp-quick{top:calc(120px + var(--safe-top));right:20px}.top-actions{gap:3px}.top-actions .icon-button{width:35px;height:35px}.brand-button>span:last-child{font-size:15px}.astro-label{width:145px}.visor-caption{bottom:calc(72px + var(--safe-bottom))}}
 
 .astro-label.label-below:after{top:-12px;bottom:auto}
+
+/* 3.2 — construction dock, continuous rotation and a single ocular column. */
+#edit-button{position:absolute;right:168px;bottom:calc(144px + var(--safe-bottom));z-index:4;background:#142029c9}
+#edit-button[aria-pressed=true]{border-color:#c6dece;color:#d8ecdf;background:#31544dd4}
+.panel-open #edit-button,.inventory-open #edit-button{visibility:hidden;pointer-events:none}
+.touch-controls #edit-button{right:calc(max(28px,env(safe-area-inset-right)) + 250px);bottom:calc(144px + var(--safe-bottom));width:48px;height:48px}
+#build-controls{z-index:5;overflow:visible;max-width:min(370px,calc(100vw - 40px));gap:4px}
+#build-controls.edit-only .build-placement-controls,#build-controls.edit-only #rotation-sliders{display:none!important}
+#build-controls>button{flex-shrink:0;touch-action:none}
+#build-controls button:disabled{opacity:.27}
+#build-remove:not(:disabled){color:#efc5b1;border:1px solid #efc5b13d;background:#efc5b10a}
+#build-rotation-toggle{font-size:20px;transition:transform .15s ease}
+#build-rotation-toggle[aria-expanded=true]{transform:rotate(180deg)}
+#rotation-sliders{position:absolute;left:0;right:0;bottom:calc(100% + 9px);padding:10px 13px;display:flex;flex-direction:column;gap:9px;background:linear-gradient(140deg,#203039f5,#10202af5);border:1px solid #c5ddda3d;border-radius:16px;box-shadow:0 8px 28px #0003;pointer-events:auto}
+#rotation-sliders label{display:grid;grid-template-columns:18px minmax(80px,1fr) 38px;gap:8px;align-items:center;min-height:27px;font-size:11px}
+#rotation-sliders input{margin:0;width:100%;min-width:0;touch-action:none;accent-color:currentColor}
+#rotation-sliders output{text-align:right;font-size:10px;font-variant-numeric:tabular-nums}
+#rotation-sliders [data-rotation-axis=x]{color:#e5a18f}#rotation-sliders [data-rotation-axis=y]{color:#98d9ba}#rotation-sliders [data-rotation-axis=z]{color:#98bdea}
+body:has(#build-controls:not([hidden]) #rotation-sliders:not([hidden])) #exp-readout{visibility:hidden}
+#foundation-size{flex-basis:100%;flex-shrink:0;justify-content:space-between;padding:2px 0}
+#foundation-size label{display:flex;align-items:center;gap:5px}
+/* Filter, caption and zoom now participate in layout rather than competing
+   for unrelated absolute positions. The exit and recording controls stay low. */
+.mounted-scope .scope-actions{bottom:calc(138px + var(--safe-bottom))!important;right:max(28px,env(safe-area-inset-right));gap:9px;align-items:stretch;max-width:220px}
+.mounted-scope .scope-actions #scope-controls{position:static!important;inset:auto!important;transform:none!important;width:auto;order:0}
+.mounted-scope #scope-button{order:2;justify-content:center}
+.mounted-scope #scope-filters{position:static!important;inset:auto!important;order:1;display:flex;align-items:center;justify-content:center;gap:9px;width:auto;height:auto;min-height:40px;border-radius:24px;padding:8px 14px;transform:none}
+.mounted-scope #scope-filters svg{width:19px;height:19px;flex-shrink:0}
+.mounted-scope #scope-filter-label{position:static!important;inset:auto!important;transform:none;font-size:11px;line-height:1.3;white-space:normal;max-width:142px;text-align:left}
+.mounted-scope #object-exit{right:max(28px,env(safe-area-inset-right));bottom:calc(70px + var(--safe-bottom))}
+.mounted-scope #exp-action{right:calc(max(28px,env(safe-area-inset-right)) + 64px);bottom:calc(70px + var(--safe-bottom));width:48px;height:48px}
+.mounted-scope #backpack-button,.mounted-scope #catalog-button,.mounted-scope .movement-actions{display:none!important}
+@media(orientation:landscape) and (max-height:600px){
+ #build-controls{bottom:calc(57px + var(--safe-bottom));max-width:328px;padding:5px 7px;gap:3px;border-radius:14px}
+ #build-controls>button{width:29px;height:30px}#build-controls .build-axes button{width:24px;height:30px}
+ #build-controls .build-axes{gap:2px;margin-right:1px;padding-right:4px}
+ #exp-readout{bottom:calc(109px + var(--safe-bottom));max-width:calc(100vw - 425px)}
+ #rotation-sliders{gap:4px;padding:7px 11px;border-radius:13px}#rotation-sliders label{min-height:25px}
+ body:has(#build-controls:not([hidden]) #rotation-sliders:not([hidden])) .compass{visibility:hidden}
+ .touch-controls #edit-button{right:calc(max(23px,env(safe-area-inset-right)) + 196px);bottom:calc(133px + var(--safe-bottom));width:40px;height:40px}
+ .mounted-scope .scope-actions{bottom:calc(120px + var(--safe-bottom))!important;right:max(23px,env(safe-area-inset-right));max-width:190px;gap:6px}
+ .mounted-scope #scope-filters{min-height:33px;padding:6px 12px}.mounted-scope #scope-filter-label{font-size:10px;max-width:140px}
+ .mounted-scope #scope-button{min-height:35px;padding:7px 12px}
+ .mounted-scope #object-exit{bottom:calc(62px + var(--safe-bottom));right:max(23px,env(safe-area-inset-right));width:44px;height:44px}
+ .mounted-scope #exp-action{bottom:calc(62px + var(--safe-bottom));right:calc(max(23px,env(safe-area-inset-right)) + 55px);width:44px;height:44px}
+}
+@media(orientation:landscape) and (max-width:740px){#build-controls{max-width:290px;gap:2px}#build-controls>button{width:27px}#build-controls .build-axes button{width:21px}#exp-readout{max-width:calc(100vw - 360px)}.touch-controls #edit-button{right:calc(max(23px,env(safe-area-inset-right)) + 186px)}}
+@media(orientation:landscape) and (max-height:360px){#rotation-sliders{gap:2px;padding:5px 10px}#rotation-sliders label{min-height:22px}.mounted-scope .scope-actions{bottom:calc(112px + var(--safe-bottom))!important;gap:4px}.mounted-scope #scope-filters,.mounted-scope #scope-button{min-height:30px}.mounted-scope #scope-controls{padding:3px}.mounted-scope #scope-controls button{min-height:26px}}
+@media(orientation:portrait) and (max-width:600px){.touch-controls #edit-button{right:128px;bottom:calc(213px + var(--safe-bottom));width:44px;height:44px}#build-controls{max-width:92vw}#rotation-sliders{left:0;right:0}.mounted-scope .scope-actions{bottom:calc(145px + var(--safe-bottom))!important;right:20px}.mounted-scope #object-exit{right:20px}.mounted-scope #exp-action{right:80px}}
+@media(orientation:landscape) and (max-height:600px){
+ body:has(#foundation-size:not([hidden])) #exp-readout{max-width:min(320px,calc(100vw - 520px))}
+ .touch-controls:has(#build-controls:not([hidden]) #rotation-sliders:not([hidden])) #edit-button,
+ .touch-controls:has(#build-controls:not([hidden]) #rotation-sliders:not([hidden])) #catalog-button,
+ .touch-controls:has(#build-controls:not([hidden]) #rotation-sliders:not([hidden])) #backpack-button{visibility:hidden;pointer-events:none}
+}

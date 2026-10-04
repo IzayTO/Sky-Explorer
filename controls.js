@@ -29,7 +29,7 @@ export class Walker{
     canvas.addEventListener('dblclick',()=>{if(!this.enabled||matchMedia('(pointer:coarse)').matches)return;if(document.pointerLockElement)document.exitPointerLock();else{try{const p=canvas.requestPointerLock?.();p?.catch?.(()=>{});}catch{}}});
     window.addEventListener('keydown',e=>{if(!this.enabled||e.ctrlKey||e.metaKey||e.altKey)return;const tag=e.target.tagName;if(e.target.isContentEditable||tag==='TEXTAREA'||tag==='SELECT'||(tag==='INPUT'&&!['range','checkbox'].includes(e.target.type)))return;if(e.code.startsWith('Arrow')&&tag==='INPUT')return;
       if(e.code==='Space'&&tag!=='BUTTON'&&tag!=='INPUT'){e.preventDefault();if(!e.repeat)this.jump();focus();}
-      if(['KeyW','KeyA','KeyS','KeyD','KeyQ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight'].includes(e.code)){e.preventDefault();this.keys.add(e.code);focus();}
+      if(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','ShiftLeft','ShiftRight'].includes(e.code)){e.preventDefault();this.keys.add(e.code);focus();}
     });window.addEventListener('keyup',e=>this.keys.delete(e.code));window.addEventListener('blur',()=>this.resetInput());window.addEventListener('pagehide',()=>this.resetInput());document.addEventListener('visibilitychange',()=>this.resetInput());
   }
   bindJoystick(el,thumb){
@@ -56,7 +56,7 @@ export class Walker{
   resetPosition(){this.pos.set(0,this.groundHeight(0,0)+1.68,0);this.verticalSpeed=0;this.grounded=true;this.landingDip=0;this.resetInput();}
   update(dt){
     if(this.lookTween){const a=this.lookTween;a.elapsed+=dt;const t=clamp(a.elapsed/.85);const k=t*t*(3-2*t);const delta=Math.atan2(Math.sin(a.targetYaw-a.yaw),Math.cos(a.targetYaw-a.yaw));this.yaw=a.yaw+delta*k;this.pitch=a.pitch+(a.targetPitch-a.pitch)*k;if(t>=1)this.lookTween=null;}
-    let f=0,s=0,turn=0;if(this.enabled){const k=this.keys;f=(k.has('KeyW')||k.has('ArrowUp')?1:0)-(k.has('KeyS')||k.has('ArrowDown')?1:0)+this.joy.y;s=(k.has('KeyD')?1:0)-(k.has('KeyA')?1:0)+this.joy.x;turn=(k.has('ArrowRight')?1:0)-(k.has('KeyQ')||k.has('ArrowLeft')?1:0);}
+    let f=0,s=0,turn=0;if(this.enabled){const k=this.keys;f=(k.has('KeyW')||k.has('ArrowUp')?1:0)-(k.has('KeyS')||k.has('ArrowDown')?1:0)+this.joy.y;s=(k.has('KeyD')?1:0)-(k.has('KeyA')?1:0)+this.joy.x;turn=(k.has('ArrowRight')?1:0)-(k.has('ArrowLeft')?1:0);}
     const sprint=this.enabled&&(this.sprintHeld||this.keys.has('ShiftLeft')||this.keys.has('ShiftRight'));
     if(this.driver){this.driver.drive(dt,this,clamp(f,-1,1),clamp(s+turn,-1,1),sprint);return 0;}
     const length=Math.hypot(f,s);if(length>1){f/=length;s/=length;}this.yaw+=turn*dt*1.3*Math.max(this.sensitivity,.12);
